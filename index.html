@@ -3,128 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA Probador de Joyas</title>
+    <title>AI Jewelry Try-On | Probador Virtual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --primary: #6200ee; --bg: #f5f5f7; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 500px; }
-        h2 { color: #333; text-align: center; margin-bottom: 25px; }
-        
-        .upload-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
-        input[type="file"], input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        
-        .preview-box { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
-        .preview-box img { width: 80px; height: 80px; object-fit: cover; border-radius: 5px; border: 1px solid #eee; display: none; }
-
-        button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        button:hover { background: #4b00b3; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-
-        #status { text-align: center; margin-top: 15px; font-weight: bold; color: var(--primary); }
-        #resultado { margin-top: 25px; padding: 15px; border-top: 2px solid #f0f0f0; line-height: 1.6; color: #444; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: none; margin: 10px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader {
+            border-top-color: #3498db;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
-<body>
+<body class="bg-gray-50 min-h-screen font-sans">
 
-<div class="container">
-    <h2>✨ Probador Virtual</h2>
-    
-    <div class="upload-group">
-        <label>1. Foto de la Persona</label>
-        <input type="file" id="fotoPersona" accept="image/*" onchange="preview(this, 'p1')">
-        <div class="preview-box"><img id="p1"></div>
+    <div class="max-w-4xl mx-auto py-12 px-4">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Probador de Joyería AI</h1>
+            <p class="text-gray-600">Sube una foto tuya y de la joya para ver el resultado técnico.</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <label class="block text-sm font-medium text-gray-700 mb-4">Paso 1: Foto de la Persona</label>
+                <input type="file" id="imgPersona" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <div id="previewPersona" class="mt-4 h-48 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    <span class="text-gray-400 text-xs">Vista previa</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <label class="block text-sm font-medium text-gray-700 mb-4">Paso 2: Foto de la Joya</label>
+                <input type="file" id="imgJoya" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                <div id="previewJoya" class="mt-4 h-48 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    <span class="text-gray-400 text-xs">Vista previa</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Instrucciones adicionales (Opcional)</label>
+            <input type="text" id="promptUser" placeholder="Ej: Haz que el collar se vea más corto..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <button onclick="enviarProcesar()" id="btnGenerar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition duration-200 shadow-lg flex items-center justify-center">
+            <span id="textBtn">GENERAR COMBINACIÓN</span>
+            <div id="loaderBtn" class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-6 w-6 ml-3 hidden"></div>
+        </button>
+
+        <div id="resultadoSeccion" class="mt-12 hidden">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Análisis de la IA:</h3>
+            <div id="resultadoTexto" class="bg-blue-50 border border-blue-100 p-6 rounded-xl text-gray-800 leading-relaxed italic">
+                </div>
+        </div>
     </div>
 
-    <div class="upload-group">
-        <label>2. Foto de la Joya</label>
-        <input type="file" id="fotoJoya" accept="image/*" onchange="preview(this, 'p2')">
-        <div class="preview-box"><img id="p2"></div>
-    </div>
+    <script>
+        // --- CONFIGURACIÓN ---
+        // REEMPLAZA ESTA URL con la que te dé Render al terminar el despliegue
+        const RENDER_URL = "https://tu-app-en-render.onrender.com/procesar";
 
-    <div class="upload-group">
-        <label>Instrucciones (opcional)</label>
-        <input type="text" id="instruccion" placeholder="Ej: Que el collar esté más arriba">
-    </div>
-
-    <button id="btnGenerar">GENERAR COMBINACIÓN</button>
-    
-    <div class="loader" id="loader"></div>
-    <p id="status"></p>
-    <div id="resultado"></div>
-</div>
-
-<script>
-    // Función para mostrar miniatura de la imagen seleccionada
-    function preview(input, id) {
-        const img = document.getElementById(id);
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => { img.src = e.target.result; img.style.display = 'block'; };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    // Función para convertir imagen a Base64 (limpio, sin cabeceras)
-    const toBase64 = file => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = error => reject(error);
-    });
-
-    document.getElementById('btnGenerar').onclick = async () => {
-        const persona = document.getElementById('fotoPersona').files[0];
-        const joya = document.getElementById('fotoJoya').files[0];
-        const btn = document.getElementById('btnGenerar');
-        const loader = document.getElementById('loader');
-        const status = document.getElementById('status');
-        const resultado = document.getElementById('resultado');
-
-        if (!persona || !joya) return alert("Por favor, selecciona ambas imágenes.");
-
-        // Bloquear interfaz mientras procesa
-        btn.disabled = true;
-        loader.style.display = 'block';
-        status.innerText = "La IA está analizando y creando...";
-        resultado.innerText = "";
-
-        try {
-            const b1 = await toBase64(persona);
-            const b2 = await toBase64(joya);
-
-            const res = await fetch('http://127.0.0.1:3000/procesar', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json' 
-                },
-                body: JSON.stringify({
-                    image1: b1,
-                    image2: b2,
-                    promptUser: document.getElementById('instruccion').value
-                })
+        // Función para previsualizar imágenes
+        function setupPreview(inputId, previewId) {
+            document.getElementById(inputId).addEventListener('change', function(e) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const preview = document.getElementById(previewId);
+                    preview.innerHTML = `<img src="${reader.result}" class="h-full w-full object-cover">`;
+                }
+                reader.readAsDataURL(e.target.files[0]);
             });
+        }
 
-            const data = await res.json();
+        setupPreview('imgPersona', 'previewPersona');
+        setupPreview('imgJoya', 'previewJoya');
 
-            if (data.success) {
-                status.innerText = "✅ ¡Proceso completado!";
-                resultado.innerHTML = `<strong>Resultado de la IA:</strong><br>${data.result}`;
-            } else {
-                throw new Error(data.error);
+        async function enviarProcesar() {
+            const img1 = document.getElementById('imgPersona').files[0];
+            const img2 = document.getElementById('imgJoya').files[0];
+            const prompt = document.getElementById('promptUser').value;
+
+            if (!img1 || !img2) {
+                alert("Por favor, sube ambas imágenes.");
+                return;
             }
 
-        } catch (error) {
-            status.innerText = "❌ Error";
-            resultado.innerText = "No se pudo conectar con el servidor. Asegúrate de que server.js esté corriendo.";
-        } finally {
-            btn.disabled = false;
-            loader.style.display = 'none';
-        }
-    };
-</script>
+            // UI Loading
+            const btn = document.getElementById('btnGenerar');
+            const loader = document.getElementById('loaderBtn');
+            const textBtn = document.getElementById('textBtn');
+            btn.disabled = true;
+            loader.classList.remove('hidden');
+            textBtn.innerText = "PROCESANDO...";
 
+            try {
+                const base64_1 = await toBase64(img1);
+                const base64_2 = await toBase64(img2);
+
+                const response = await fetch(RENDER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image1: base64_1.split(',')[1],
+                        image2: base64_2.split(',')[1],
+                        promptUser: prompt
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('resultadoSeccion').classList.remove('hidden');
+                    document.getElementById('resultadoTexto').innerText = data.result;
+                    document.getElementById('resultadoSeccion').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert("Error de la IA: " + data.error);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error al conectar con el servidor. Verifica que Render esté activo.");
+            } finally {
+                btn.disabled = false;
+                loader.classList.add('hidden');
+                textBtn.innerText = "GENERAR COMBINACIÓN";
+            }
+        }
+
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    </script>
 </body>
 </html>
