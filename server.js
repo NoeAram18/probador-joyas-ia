@@ -1,9 +1,10 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const app = express();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const app = express();
+
 
 // --- MODIFICACIÓN 1: CORS ABIERTO ---
 // Esto permite que tu GitHub Pages se comunique con el servidor de Koyeb sin bloqueos
@@ -58,3 +59,4 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
+
