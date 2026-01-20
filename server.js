@@ -18,7 +18,7 @@ app.post('/procesar', async (req, res) => {
         const { image1, image2, promptUser } = req.body;
 
         // Usamos gemini-1.5-flash o gemini-3-flash-preview según tu panel de AI Studio
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", apiVersion: "v1" });
 
         const promptSistema = `
             Actúa como un motor de renderizado de joyería de alta precisión.
@@ -53,5 +53,6 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor en puerto ${PORT}`);
 });
+
 
 
