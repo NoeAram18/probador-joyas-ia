@@ -10,8 +10,8 @@ const upload = multer({ dest: 'uploads/' }); // Carpeta temporal
 // --- CONFIGURACIÓN DE GOOGLE DRIVE ---
 // Cargamos las credenciales desde la Variable de Entorno de Koyeb
 const GOOGLE_CREDENTIALS = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-const FOLDER_PENDIENTES_ID = 'ID_DE_TU_CARPETA_PENDIENTES'; // Reemplaza esto
-const FOLDER_FINALIZADOS_ID = 'ID_DE_TU_CARPETA_FINALIZADOS'; // Reemplaza esto
+const FOLDER_PENDIENTES_ID = '1m4Zkt9BPI0nOu1KTGx8xeReRj8Ex4g2B'; // Reemplaza esto
+const FOLDER_FINALIZADOS_ID ='1m4Zkt9BPI0nOu1KTGx8xeReRj8Ex4g2B'; // Reemplaza esto
 
 const auth = new google.auth.JWT(
     GOOGLE_CREDENTIALS.client_email,
@@ -76,6 +76,7 @@ app.get('/check-status/:fileName', async (req, res) => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Servidor joyeria corriendo en puerto ${PORT}`));
+
 
 
 
