@@ -53,7 +53,8 @@ async function uploadToDrive(file) {
         const response = await drive.files.create({
             resource: fileMetadata,
             media: media,
-            fields: 'id'
+            fields: 'id',
+            supportsAllDrives: true
         });
 
         // Borrar archivo local después de subir
@@ -118,6 +119,7 @@ const auth = new google.auth.JWT(
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor joyeria en puerto ${PORT}`);
 });
+
 
 
 
