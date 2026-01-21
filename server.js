@@ -28,31 +28,49 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
 
         const fullCatalogPath = path.join(__dirname, 'public', catalogPath);
 
-        // --- PASO 1: ENVIAR FOTO DEL CLIENTE ---
+     // ... (mismo inicio de antes)
+
+        // --- PASO 1: ENVIAR FOTO DEL CLIENTE (Ya sabemos que funciona) ---
         const form1 = new FormData();
         form1.append('chat_id', CHAT_ID);
         form1.append('photo', fs.createReadStream(userFile.path));
-        form1.append('caption', `👤 **NUEVO PEDIDO**\nEsta es la foto que subió el cliente.`);
+        form1.append('caption', `👤 **NUEVO PEDIDO**\nEl cliente envió esta foto.`);
 
         const res1 = await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, form1, {
             headers: form1.getHeaders()
         });
 
-        // --- PASO 2: ENVIAR FOTO DEL CATÁLOGO ---
-        // Usamos un pequeño retraso de 500ms para no saturar la API
+        const messageId = res1.data.result.message_id;
+
+        // --- PASO 2: ENVIAR FOTO DEL CATÁLOGO (Con Plan B) ---
         await new Promise(resolve => setTimeout(resolve, 500));
 
         if (fs.existsSync(fullCatalogPath)) {
-            const form2 = new FormData();
-            form2.append('chat_id', CHAT_ID);
-            form2.append('photo', fs.createReadStream(fullCatalogPath));
-            form2.append('caption', `💍 **REFERENCIA SELECCIONADA**\nArchivo: ${path.basename(catalogPath)}`);
-            form2.append('reply_to_message_id', res1.data.result.message_id); // Esto las "conecta" visualmente
+            try {
+                const form2 = new FormData();
+                form2.append('chat_id', CHAT_ID);
+                form2.append('photo', fs.createReadStream(fullCatalogPath));
+                form2.append('caption', `💍 **JOYA SELECCIONADA**\nReferencia: ${path.basename(catalogPath)}`);
+                form2.append('reply_to_message_id', messageId);
 
-            await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, form2, {
-                headers: form2.getHeaders()
-            });
+                await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, form2, {
+                    headers: form2.getHeaders()
+                });
+            } catch (imgError) {
+                console.error('⚠️ La imagen del catálogo falló, enviando solo texto...');
+                // PLAN B: Si la imagen falla, envía solo el texto para no perder el pedido
+                await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+                    chat_id: CHAT_ID,
+                    text: `⚠️ **No se pudo procesar la imagen del catálogo**, pero el cliente eligió: **${path.basename(catalogPath)}**`,
+                    reply_to_message_id: messageId
+                });
+            }
         }
+
+        if (fs.existsSync(userFile.path)) fs.unlinkSync(userFile.path);
+        res.json({ success: true });
+
+// ... (resto del código)
 
         // Limpieza
         fs.unlinkSync(userFile.path);
@@ -65,4 +83,5 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor listo en puerto ${PORT}`));
+
 
