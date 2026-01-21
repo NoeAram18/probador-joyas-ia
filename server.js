@@ -27,7 +27,6 @@ app.use(express.json());
 
 // 2. CONFIGURACIÓN DE GOOGLE DRIVE
 const SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.readonly'];
-
 async function uploadToDrive(file) {
     try {
         const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
@@ -37,7 +36,7 @@ async function uploadToDrive(file) {
             credentials.client_email,
             null,
             formattedKey,
-            SCOPES
+            ['https://www.googleapis.com/auth/drive'] // Usamos el scope amplio
         );
 
         const drive = google.drive({ version: 'v3', auth });
@@ -52,27 +51,29 @@ async function uploadToDrive(file) {
             body: fs.createReadStream(file.path)
         };
 
+        // LA CLAVE: Usamos requestBody y forzamos el uso de la cuota del destino
         const response = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
             fields: 'id',
-            // ESTAS TRES LÍNEAS SON EL "TRUCO" PARA SALTAR LA CUOTA
-            supportsAllDrives: true,
-            keepRevisionForever: false,
-            ignoreDefaultVisibility: true 
-        }, {
-            // Esto fuerza a que el sistema use la cuota del dueño de la carpeta
-            params: { supportsAllDrives: true }
+            supportsAllDrives: true, // Crucial para saltar la cuota propia
+            keepRevisionForever: false
         });
 
-        console.log("✅ ¡SUBIDA EXITOSA! ID:", response.data.id);
-        fs.unlinkSync(file.path);
+        console.log("✅ ¡POR FIN! Archivo en Drive con ID:", response.data.id);
+        
+        // Intentar borrar el archivo local para no llenar el servidor
+        try { fs.unlinkSync(file.path); } catch (e) {}
+        
         return response.data.id;
     } catch (error) {
-        console.error("❌ Error detallado:", error.response ? error.response.data : error.message);
+        // Log más detallado para ver si el problema es ahora la llave o el ID
+        const errorMsg = error.response ? JSON.stringify(error.response.data) : error.message;
+        console.error("❌ Error detallado en Drive:", errorMsg);
         throw error;
     }
 }
+
 // 3. RUTA PARA RECIBIR LA IMAGEN (Coincide con tu index.html)
 app.post('/upload-to-drive', upload.single('image'), async (req, res) => {
     try {
@@ -126,6 +127,7 @@ const auth = new google.auth.JWT(
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor joyeria en puerto ${PORT}`);
 });
+
 
 
 
