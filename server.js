@@ -24,42 +24,30 @@ const CHAT_ID = process.env.CHAT_ID;
 app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
     try {
         const userFile = req.file;
-        const catalogPath = req.body.catalogPath; // Recibimos la ruta: 'images/anillo1.jpg'
+        const catalogPath = req.body.catalogPath; // Ejemplo: 'images/anillo1.jpg'
 
         if (!userFile || !catalogPath) {
             return res.status(400).json({ success: false, error: 'Faltan datos' });
         }
 
-        // Construimos la ruta real en el servidor
-        const fullCatalogPath = `./public/${catalogPath}`;
+        // Extraemos solo el nombre del producto de la ruta para el mensaje
+        const productName = catalogPath.split('/').pop().replace('.jpg', '').replace('.png', '');
 
         const form = new FormData();
         form.append('chat_id', CHAT_ID);
-        
-        const media = [
-            {
-                type: 'photo',
-                media: 'attach://userPhoto',
-                caption: `💎 **NUEVA SOLICITUD**\nFoto del cliente y referencia del catálogo.`
-            },
-            {
-                type: 'photo',
-                media: 'attach://catalogPhoto'
-            }
-        ];
-
-        form.append('media', JSON.stringify(media));
-        form.append('userPhoto', fs.createReadStream(userFile.path));
-        form.append('catalogPhoto', fs.createReadStream(fullCatalogPath));
+        // Enviamos la foto del usuario
+        form.append('photo', fs.createReadStream(userFile.path));
+        // En el texto (caption) ponemos la referencia de la joya
+        form.append('caption', `💎 **NUEVA SOLICITUD**\n\n👤 Foto del cliente adjunta.\n💍 Joya seleccionada: ${productName.toUpperCase()}`);
 
         await axios.post(
-            `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMediaGroup`,
+            `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`,
             form,
             { headers: form.getHeaders() }
         );
 
-        // Borrar solo la foto temporal del usuario
-        fs.unlinkSync(userFile.path);
+        // Borrar la foto temporal
+        if (fs.existsSync(userFile.path)) fs.unlinkSync(userFile.path);
 
         res.json({ success: true });
 
@@ -70,4 +58,5 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor en puerto ${PORT}`));
+
 
