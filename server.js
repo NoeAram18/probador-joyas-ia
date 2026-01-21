@@ -28,7 +28,6 @@ app.use(express.json());
 // 2. CONFIGURACIÓN DE GOOGLE DRIVE
 // Usamos el scope completo para tener permisos de escritura y lectura total
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
-
 async function uploadToDrive(file) {
     try {
         const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
@@ -38,44 +37,36 @@ async function uploadToDrive(file) {
             credentials.client_email,
             null,
             formattedKey,
-            ['https://www.googleapis.com/auth/drive.file'] 
+            ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/drive.file']
         );
 
         const drive = google.drive({ version: 'v3', auth });
 
-        const fileMetadata = {
-            name: file.filename,
-            parents: ['1rUKa-4_Js4usSDo_6DQmvl8LjfRflrnt']
-        };
-
-        const media = {
-            mimeType: file.mimetype,
-            body: fs.createReadStream(file.path)
-        };
-
-        // LA CLAVE: Cambiamos la forma de la petición
+        // Intentamos subir el archivo forzando que la cuota sea del PADRE (tu carpeta)
         const response = await drive.files.create({
-            requestBody: fileMetadata,
-            media: media,
+            requestBody: {
+                name: file.filename,
+                parents: ['1rUKa-4_Js4usSDo_6DQmvl8LjfRflrnt']
+            },
+            media: {
+                mimeType: file.mimetype,
+                body: fs.createReadStream(file.path)
+            },
             fields: 'id',
-            // Estas líneas obligan a usar el espacio de la carpeta destino
-            supportsAllDrives: true,
-            keepRevisionForever: false,
-            ignoreDefaultVisibility: true
+            supportsAllDrives: true // Obligatorio para cuentas de servicio
         });
 
-        console.log("✅ ¡SUBIDA EXITOSA! ID:", response.data.id);
-        
+        console.log("✅ ¡POR FIN! Subido con ID:", response.data.id);
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return response.data.id;
 
     } catch (error) {
-        // Log detallado para ver si el error cambió
-        const detail = error.response ? JSON.stringify(error.response.data) : error.message;
-        console.error("❌ Error en Drive:", detail);
-        throw new Error("Error de cuota en Google Drive. Verifica permisos de la carpeta.");
+        // Si vuelve a fallar aquí, el problema es que Google detecta al robot como "externo"
+        console.error("❌ Error de Google:", error.message);
+        throw new Error(error.message);
     }
 }
+
 
 // 3. RUTA PARA RECIBIR LA IMAGEN DESDE LA WEB
 app.post('/upload-to-drive', upload.single('image'), async (req, res) => {
@@ -139,4 +130,5 @@ app.get('/check-status/:fileName', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor joyeria corriendo en puerto ${PORT}`);
 });
+
 
