@@ -69,24 +69,23 @@ async function uploadToDrive(file) {
 }
 
 // 4. RUTA PARA RECIBIR LA IMAGEN
+// Debe decir '/upload-to-drive' para que coincida con tu index.html
 app.post('/upload-to-drive', upload.single('image'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).send('No se subió ninguna imagen.');
         }
-        console.log("📂 Recibida imagen:", req.file.filename);
+        console.log("📂 Imagen recibida para Drive:", req.file.filename);
         
         const driveId = await uploadToDrive(req.file);
-        console.log("🚀 Subida con éxito. ID:", driveId);
+        console.log("🚀 Éxito en Drive. ID:", driveId);
         
-        res.json({ success: true, id: driveId });
+        // Enviamos el ID para que el index.html pueda trabajar con él
+        res.json({ success: true, fileName: req.file.filename, driveId: driveId });
     } catch (error) {
+        console.error("❌ Error en el proceso:", error.message);
         res.status(500).json({ success: false, error: error.message });
     }
-});
-
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor listo en puerto ${PORT}`);
 });
 
 
