@@ -56,11 +56,19 @@ async function uploadToDrive(file) {
 
         // AQUÍ ESTÁ EL CAMBIO IMPORTANTE
         const response = await drive.files.create({
-            resource: fileMetadata,
-            media: media,
-            fields: 'id',
-            supportsAllDrives: true // Permite usar el espacio de tu cuenta personal
-        });
+    resource: fileMetadata,
+    media: media,
+    fields: 'id',
+    // ESTAS DOS LÍNEAS SON LAS QUE SOLUCIONAN EL ERROR DE CUOTA
+    supportsAllDrives: true,
+    keepRevisionForever: false 
+}, {
+    // Esto fuerza a que use la configuración de la carpeta destino
+    // y no la cuota de la cuenta de servicio
+    params: {
+        supportsAllDrives: true
+    }
+});
 
         fs.unlinkSync(file.path);
         return response.data.id;
@@ -123,6 +131,7 @@ const auth = new google.auth.JWT(
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor joyeria en puerto ${PORT}`);
 });
+
 
 
 
