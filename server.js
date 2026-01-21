@@ -45,7 +45,7 @@ async function uploadToDrive(file) {
 
         const fileMetadata = {
             name: file.filename,
-            parents: ['TU_ID_DE_CARPETA_AQUI'] // <-- REEMPLAZA ESTO
+            parents: ['1EYcfC0mvvB8YcqOvRbcayEzeXrNohv7D'] // <-- REEMPLAZA ESTO
         };
 
         const media = {
