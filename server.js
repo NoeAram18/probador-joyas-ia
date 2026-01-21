@@ -42,7 +42,7 @@ async function uploadToDrive(file) {
 
         const fileMetadata = {
             name: file.filename,
-            parents: ['1EYcfC0mvvB8YcqOvRbcayEzeXrNohv7D'] // <--- ¡ASEGÚRATE DE CAMBIAR ESTO!
+            parents: ['1FgtrEXLOn4TfXxXkXSrXICiFTH4fa3-5'] // <--- ¡ASEGÚRATE DE CAMBIAR ESTO!
         };
 
         const media = {
@@ -118,6 +118,7 @@ const auth = new google.auth.JWT(
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor joyeria en puerto ${PORT}`);
 });
+
 
 
 
