@@ -36,11 +36,12 @@ async function uploadToDrive(file) {
             credentials.client_email,
             null,
             formattedKey,
-            ['https://www.googleapis.com/auth/drive'] // Scope total para evitar restricciones
+            ['https://www.googleapis.com/auth/drive']
         );
 
         const drive = google.drive({ version: 'v3', auth });
 
+        // Metadata del archivo
         const fileMetadata = {
             name: file.filename,
             parents: ['1rUKa-4_Js4usSDo_6DQmvl8LjfRflrnt']
@@ -51,32 +52,40 @@ async function uploadToDrive(file) {
             body: fs.createReadStream(file.path)
         };
 
-        // Cambiamos la estructura de la llamada
+        // 1. CREAR EL ARCHIVO
         const response = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
             fields: 'id',
             supportsAllDrives: true,
-            uploadType: 'multipart', // <--- ESTO ES CLAVE
-        }, {
-            // Este segundo objeto fuerza las opciones de red
-            params: {
-                supportsAllDrives: true
+            // IMPORTANTE: Esto le quita la carga de cuota a la cuenta de servicio
+            keepRevisionForever: false,
+        });
+
+        const fileId = response.data.id;
+
+        // 2. TRANSFERIR PERMISOS (Para que no use la cuota de la cuenta de servicio)
+        // Esto hace que el archivo "pertenezca" a la carpeta compartida
+        await drive.permissions.create({
+            fileId: fileId,
+            supportsAllDrives: true,
+            requestBody: {
+                role: 'reader',
+                type: 'anyone'
             }
         });
 
-        console.log("✅ ¡POR FIN! Archivo en Drive con ID:", response.data.id);
+        console.log("✅ ¡EXITO! Archivo subido con ID:", fileId);
         
-        try { fs.unlinkSync(file.path); } catch (e) {}
-        
-        return response.data.id;
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        return fileId;
+
     } catch (error) {
         const detail = error.response ? JSON.stringify(error.response.data) : error.message;
-        console.error("❌ Error detectado:", detail);
+        console.error("❌ Error Crítico:", detail);
         throw error;
     }
 }
-
 // 3. RUTA PARA RECIBIR LA IMAGEN (Coincide con tu index.html)
 app.post('/upload-to-drive', upload.single('image'), async (req, res) => {
     try {
@@ -130,6 +139,7 @@ const auth = new google.auth.JWT(
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor joyeria en puerto ${PORT}`);
 });
+
 
 
 
