@@ -3,85 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo Joyería</title>
+    <title>Diseño de Joyería Personalizada</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
-        .catalog { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
-        .item { background: white; padding: 10px; border: 2px solid transparent; border-radius: 10px; cursor: pointer; }
-        .item.selected { border-color: #d4af37; background: #fffdf0; }
-        .item img { width: 100%; border-radius: 5px; }
-        #upload-section { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        button { background: #d4af37; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        :root { --oro: #d4af37; --oscuro: #1a1a1a; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px; background: #f8f9fa; color: var(--oscuro); }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        /* Catálogo */
+        .catalog { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin: 20px 0; }
+        .item { background: white; padding: 10px; border: 2px solid #eee; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+        .item img { width: 100%; border-radius: 8px; }
+        .item.selected { border-color: var(--oro); background: #fffdf0; transform: scale(1.05); }
+
+        /* Formulario */
+        input[type="file"], input[type="text"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { background: var(--oro); color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 18px; cursor: pointer; width: 100%; font-weight: bold; }
+        button:disabled { background: #ccc; }
+
+        /* Sección de Resultado */
+        #result-section { display: none; margin-top: 30px; padding: 20px; border: 2px dashed var(--oro); border-radius: 15px; background: #fffdf5; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--oro); border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #edited-img { width: 100%; border-radius: 10px; margin-top: 15px; display: none; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
-    <h1>Elige tu Joya y Sube tu Foto</h1>
+<div class="container">
+    <h1>Taller de Joyería</h1>
+    <p>Selecciona una pieza y sube tu foto para personalizarla.</p>
 
-    <div id="upload-section">
-        <h3>1. Selecciona del Catálogo:</h3>
-        <div class="catalog" id="catalog">
-            <div class="item" onclick="selectItem(this, 'images/anillo1.jpg')">
-                <img src="images/anillo1.jpg" alt="Anillo Oro 1">
-                <p>Anillo de Oro</p>
-            </div>
-            <div class="item" onclick="selectItem(this, 'images/anillo2.jpg')">
-                <img src="images/anillo2.jpg" alt="Anillo de oro 2">
-                <p>Collar de Plata</p>
-            </div>
+    <div class="catalog" id="catalog">
+        <div class="item" onclick="selectItem(this, 'images/anillo1.jpg')">
+            <img src="images/anillo1.jpg" alt="Anillo 1">
+            <p>Anillo Ref. A1</p>
         </div>
-
-        <h3>2. Sube tu foto (rostro/mano):</h3>
-        <input type="file" id="userPhoto" accept="image/*"><br><br>
-
-        <button onclick="enviarPedido()">Enviar a Diseñador</button>
-        <p id="status"></p>
+        <div class="item" onclick="selectItem(this, 'images/anillo2.jpg')">
+            <img src="images/anillo2.jpg" alt="Anillo 2">
+            <p>Anillo Ref. A2</p>
+        </div>
     </div>
 
-    <script>
-        let selectedCatalogImg = null;
+    <input type="text" id="clientName" placeholder="Tu Nombre o WhatsApp">
+    <p>Sube la foto donde quieres probar la joya:</p>
+    <input type="file" id="userPhoto" accept="image/*">
 
-        function selectItem(element, imgPath) {
-            document.querySelectorAll('.item').forEach(i => i.classList.remove('selected'));
-            element.classList.add('selected');
-            selectedCatalogImg = imgPath;
-        }
+    <button id="btnEnviar" onclick="enviarPedido()">ENVIAR A DISEÑO</button>
 
-        async function enviarPedido() {
-    const userPhotoInput = document.getElementById('userPhoto');
-    const status = document.getElementById('status');
-
-    if (!selectedCatalogImg || !userPhotoInput.files[0]) {
-        alert("Por favor, selecciona una joya y sube tu foto.");
-        return;
-    }
-
-    status.innerText = "Enviando pedido...";
-    const formData = new FormData();
-    
-    // 1. Añadimos la foto del usuario
-    formData.append('userImage', userPhotoInput.files[0]);
-    
-    // 2. Añadimos la ruta de la imagen del catálogo como texto 
-    // (Es más seguro que intentar convertirla a Blob en el cliente)
-    formData.append('catalogPath', selectedCatalogImg);
-
-    try {
-        const res = await fetch('/send-to-telegram', { 
-            method: 'POST', 
-            body: formData 
-        });
+    <div id="result-section">
+        <div id="waiting">
+            <div class="loader"></div>
+            <p><strong>Enviado con éxito.</strong></p>
+            <p>El diseñador está editando tu pieza... <br><small>No cierres esta ventana para ver el resultado.</small></p>
+        </div>
         
-        const data = await res.json();
-        if (data.success) {
-            status.innerHTML = "✅ ¡Enviado! El diseñador recibió todo.";
-        } else {
-            status.innerText = "❌ Error en el servidor: " + (data.error || 'Desconocido');
-        }
-    } catch (e) {
-        status.innerText = "❌ Error de conexión con el servidor.";
+        <div id="finished" style="display:none;">
+            <h3>✨ ¡Tu diseño está listo!</h3>
+            <img id="edited-img" src="" alt="Diseño final">
+            <br><br>
+            <button style="background:#25d366;" onclick="descargarDiseño()">DESCARGAR IMAGEN</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedCatalogImg = null;
+    let intervalId = null;
+
+    function selectItem(element, imgPath) {
+        document.querySelectorAll('.item').forEach(i => i.classList.remove('selected'));
+        element.classList.add('selected');
+        selectedCatalogImg = imgPath;
     }
-}
-    </script>
+
+    async function enviarPedido() {
+        const userPhoto = document.getElementById('userPhoto').files[0];
+        const clientName = document.getElementById('clientName').value;
+        const btn = document.getElementById('btnEnviar');
+
+        if (!selectedCatalogImg || !userPhoto || !clientName) {
+            alert("Por favor completa: Nombre, Joya del catálogo y tu Foto.");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Subiendo archivo...";
+
+        const formData = new FormData();
+        formData.append('userImage', userPhoto);
+        formData.append('catalogPath', selectedCatalogImg);
+        formData.append('clientName', clientName); // Enviamos el nombre al server
+
+        try {
+            const res = await fetch('/send-to-telegram', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('result-section').style.display = 'block';
+                document.getElementById('btnEnviar').style.display = 'none';
+                // Comenzar a preguntar por la respuesta cada 5 segundos
+                iniciarEspera(data.clientId);
+            } else {
+                alert("Error al enviar. Intenta de nuevo.");
+                btn.disabled = false;
+            }
+        } catch (e) {
+            alert("Error de conexión.");
+            btn.disabled = false;
+        }
+    }
+
+    function iniciarEspera(clientId) {
+        intervalId = setInterval(async () => {
+            try {
+                const res = await fetch(`/check-edition/${clientId}`);
+                const data = await res.json();
+
+                if (data.ready) {
+                    clearInterval(intervalId);
+                    mostrarResultado(data.url);
+                }
+            } catch (e) {
+                console.log("Esperando respuesta...");
+            }
+        }, 5000); // Consulta cada 5 segundos
+    }
+
+    function mostrarResultado(url) {
+        document.getElementById('waiting').style.display = 'none';
+        document.getElementById('finished').style.display = 'block';
+        const img = document.getElementById('edited-img');
+        img.src = url;
+        img.style.display = 'block';
+    }
+
+    function descargarDiseño() {
+        const url = document.getElementById('edited-img').src;
+        window.open(url, '_blank');
+    }
+</script>
+
 </body>
 </html>
