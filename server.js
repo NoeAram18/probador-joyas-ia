@@ -38,7 +38,7 @@ async function uploadToDrive(file) {
             credentials.client_email,
             null,
             formattedKey,
-            SCOPES
+            ['https://www.googleapis.com/auth/drive.file'] 
         );
 
         const drive = google.drive({ version: 'v3', auth });
@@ -53,37 +53,27 @@ async function uploadToDrive(file) {
             body: fs.createReadStream(file.path)
         };
 
-        // 1. CREAR EL ARCHIVO (Con parámetros para saltar error de cuota)
+        // LA CLAVE: Cambiamos la forma de la petición
         const response = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
             fields: 'id',
+            // Estas líneas obligan a usar el espacio de la carpeta destino
             supportsAllDrives: true,
             keepRevisionForever: false,
+            ignoreDefaultVisibility: true
         });
 
-        const fileId = response.data.id;
-
-        // 2. HACER EL ARCHIVO PÚBLICO/ACCESIBLE
-        // Esto ayuda a que no se bloquee por falta de cuota de la cuenta de servicio
-        await drive.permissions.create({
-            fileId: fileId,
-            supportsAllDrives: true,
-            requestBody: {
-                role: 'reader',
-                type: 'anyone'
-            }
-        });
-
-        console.log("✅ ¡EXITO! Archivo subido con ID:", fileId);
+        console.log("✅ ¡SUBIDA EXITOSA! ID:", response.data.id);
         
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-        return fileId;
+        return response.data.id;
 
     } catch (error) {
+        // Log detallado para ver si el error cambió
         const detail = error.response ? JSON.stringify(error.response.data) : error.message;
-        console.error("❌ Error Crítico en Drive:", detail);
-        throw error;
+        console.error("❌ Error en Drive:", detail);
+        throw new Error("Error de cuota en Google Drive. Verifica permisos de la carpeta.");
     }
 }
 
@@ -149,3 +139,4 @@ app.get('/check-status/:fileName', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor joyeria corriendo en puerto ${PORT}`);
 });
+
