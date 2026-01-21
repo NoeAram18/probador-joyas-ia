@@ -86,13 +86,14 @@ app.post('/upload-to-drive', upload.single('image'), async (req, res) => {
 // 4. RUTA PARA REVISAR ESTADO (Polling)
 app.get('/check-status/:fileName', async (req, res) => {
     try {
-        const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
-        const auth = new google.auth.JWT(
-            credentials.client_email,
-            null,
-            credentials.private_key,
-            SCOPES
-        );
+       // Busca esta parte dentro de la función uploadToDrive
+const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+const auth = new google.auth.JWT(
+    credentials.client_email,
+    null,
+    credentials.private_key.split(String.raw`\n`).join('\n'), // <-- Esto arregla el error 500
+    SCOPES
+);
         const drive = google.drive({ version: 'v3', auth });
 
         // Buscamos si existe un archivo con nombre similar (el editado)
@@ -117,4 +118,5 @@ app.get('/check-status/:fileName', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor joyeria en puerto ${PORT}`);
 });
+
 
