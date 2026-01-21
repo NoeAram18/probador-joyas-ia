@@ -52,21 +52,24 @@ async function uploadToDrive(file) {
             body: fs.createReadStream(file.path)
         };
 
-        // Cambiamos la forma de llamar a .create para evitar el bloqueo de cuota
         const response = await drive.files.create({
-            requestBody: fileMetadata, // Usamos requestBody en lugar de resource
+            requestBody: fileMetadata,
             media: media,
             fields: 'id',
+            // ESTAS TRES LÍNEAS SON EL "TRUCO" PARA SALTAR LA CUOTA
             supportsAllDrives: true,
-            ignoreDefaultVisibility: true
+            keepRevisionForever: false,
+            ignoreDefaultVisibility: true 
+        }, {
+            // Esto fuerza a que el sistema use la cuota del dueño de la carpeta
+            params: { supportsAllDrives: true }
         });
 
-        console.log("✅ Subida exitosa a Drive. ID:", response.data.id);
+        console.log("✅ ¡SUBIDA EXITOSA! ID:", response.data.id);
         fs.unlinkSync(file.path);
         return response.data.id;
     } catch (error) {
-        // Si el error persiste, este log nos dirá si es cuota o permisos
-        console.error("❌ Error detallado en Drive:", error.response ? error.response.data : error.message);
+        console.error("❌ Error detallado:", error.response ? error.response.data : error.message);
         throw error;
     }
 }
@@ -123,6 +126,7 @@ const auth = new google.auth.JWT(
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor joyeria en puerto ${PORT}`);
 });
+
 
 
 
