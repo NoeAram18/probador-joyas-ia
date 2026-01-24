@@ -3,133 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo Joyería Exclusiva</title>
+    <title>Joyería Luxury - Personalizador</title>
     <style>
-        :root { --oro: #c5a059; --dark: #121212; }
-        body { font-family: 'Georgia', serif; background: #fff; color: var(--dark); margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; padding: 20px; }
-        h1 { text-align: center; text-transform: uppercase; letter-spacing: 4px; border-bottom: 1px solid var(--oro); padding-bottom: 10px; }
+        :root { --oro: #c5a059; --dark: #1a1a1a; --silver: #bdc3c7; }
+        body { font-family: 'Playfair Display', serif; background: #fff; margin: 0; padding: 20px; color: var(--dark); }
+        .container { max-width: 900px; margin: auto; }
         
-        /* Grid del Catálogo */
-        .grid-joyas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 30px; }
-        .joya-card { border: 1px solid #f0f0f0; border-radius: 5px; overflow: hidden; cursor: pointer; transition: 0.3s; background: #fff; text-align: center; }
-        .joya-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .joya-card img { width: 100%; height: 200px; object-fit: cover; }
-        .joya-card.selected { border: 2px solid var(--oro); background: #fdfaf4; }
-        .joya-info { padding: 15px; font-size: 14px; }
+        /* Filtros */
+        .filter-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+        .filter-btn { padding: 10px 20px; border: 1px solid var(--oro); background: transparent; cursor: pointer; transition: 0.3s; border-radius: 20px; }
+        .filter-btn.active { background: var(--oro); color: white; }
 
-        /* Formulario */
-        .form-section { margin-top: 40px; background: #f9f9f9; padding: 30px; border-radius: 10px; }
-        input, button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; box-sizing: border-box; }
-        button { background: var(--dark); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .grid-joyas { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .joya-card { border: 1px solid #eee; border-radius: 8px; overflow: hidden; cursor: pointer; transition: 0.3s; text-align: center; background: #fff; }
+        .joya-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .joya-card.selected { border: 2px solid var(--oro); }
+        .joya-card img { width: 100%; height: 180px; object-fit: cover; }
+        .joya-info { padding: 10px; border-top: 1px solid #f9f9f9; }
+
+        /* Sección Metal y Precio */
+        .config-section { background: #fdfaf4; padding: 25px; border-radius: 12px; margin-top: 30px; border: 1px solid #f1e6d0; }
+        select, input, button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 6px; border: 1px solid #ddd; font-size: 16px; }
+        
+        .price-display { font-size: 24px; color: var(--oro); font-weight: bold; text-align: center; margin: 15px 0; }
+        
+        button { background: var(--dark); color: white; border: none; font-weight: bold; cursor: pointer; }
         button:hover { background: var(--oro); }
-        button:disabled { background: #ccc; }
 
-        /* Respuesta en Vivo */
-        #status-area { display: none; margin-top: 30px; border: 1px solid var(--oro); padding: 20px; text-align: center; }
-        #final-design { width: 100%; max-width: 500px; margin-top: 20px; border-radius: 10px; display: none; }
+        /* Resultado y WhatsApp */
+        #status-area { display: none; margin-top: 30px; text-align: center; border: 2px solid var(--oro); padding: 20px; border-radius: 10px; }
+        #final-design { width: 100%; max-width: 450px; border-radius: 10px; margin: 20px 0; display: none; }
+        .btn-whatsapp { background: #25d366 !important; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Joyas a Medida</h1>
-    <p style="text-align: center;">Seleccione una pieza y suba su foto para recibir una edición personalizada.</p>
+    <h1 style="text-align:center">Atelier de Joyería</h1>
+    
+    <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterCat('Todos', this)">Todos</button>
+        <button class="filter-btn" onclick="filterCat('Anillos', this)">Anillos</button>
+        <button class="filter-btn" onclick="filterCat('Collares', this)">Collares</button>
+        <button class="filter-btn" onclick="filterCat('Pulseras', this)">Pulseras</button>
+    </div>
 
-    <div class="grid-joyas" id="catalogo">
-        </div>
+    <div class="grid-joyas" id="catalogo"></div>
 
-    <div class="form-section">
-        <h3>Datos del pedido</h3>
-        <input type="text" id="nombreCliente" placeholder="Su Nombre o WhatsApp">
-        <label>Suba la foto donde desea probar la joya:</label>
-        <input type="file" id="fotoCliente" accept="image/*">
-        <button id="btnEnviar" onclick="enviarPedido()">SOLICITAR DISEÑO EN VIVO</button>
+    <div class="config-section">
+        <h3>1. Configura tu pieza</h3>
+        <label>Selecciona el Metal:</label>
+        <select id="metalSelect" onchange="updatePrice()">
+            <option value="1" data-name="Plata Ley 950">Plata Ley 950</option>
+            <option value="5" data-name="Oro 14k">Oro 14k (+5x)</option>
+            <option value="8" data-name="Oro 18k">Oro 18k (+8x)</option>
+        </select>
+
+        <div class="price-display" id="totalPrice">Precio Base: -</div>
+
+        <h3>2. Sube tu foto</h3>
+        <input type="text" id="nombre" placeholder="Nombre completo">
+        <input type="file" id="foto" accept="image/*">
+        <button id="btnEnviar" onclick="enviarPedido()">ENVIAR PARA EDICIÓN</button>
     </div>
 
     <div id="status-area">
-        <p id="msg-estado">⏳ Enviando solicitud a nuestros diseñadores...</p>
-        <img id="final-design" src="" alt="Diseño final">
+        <p id="status-msg">⏳ Procesando diseño...</p>
+        <img id="final-design">
+        <button id="btnWA" class="btn-whatsapp" onclick="irAWhatsApp()">✨ ¡ME ENCANTA! QUIERO COMPRARLO</button>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURA TUS PRODUCTOS AQUÍ ---
-    // Pega aquí los enlaces directos de ImgBB (los que terminan en .jpg o .png)
     const misProductos = [
-        { id: "REF-01", nombre: "Anillo Diamante Solitario", url: "https://i.ibb.co/n8ZFRZf6/yellow.avif" },
-        { id: "REF-02", nombre: "Banda Oro Rosa 18k", url: "https://i.ibb.co/XZ4DBqpV/anilloh3.webp" },
-        { id: "REF-03", nombre: "Zafiro Azul Imperial", url: "https://ibb.co/5WCLJ8zs" },
-        { id: "REF-04", nombre: "Esmeralda Colombiana", url: "https://ibb.co/6LRBp55" }
+        { id: "A1", nombre: "Anillo Solitario", cat: "Anillos", precio: 50, url: "https://i.ibb.co/XYZ1/anillo1.jpg" },
+        { id: "A2", nombre: "Alianza Infinity", cat: "Anillos", precio: 80, url: "https://i.ibb.co/XYZ2/anillo2.jpg" },
+        { id: "C1", nombre: "Gargantilla Luz", cat: "Collares", precio: 120, url: "https://i.ibb.co/XYZ3/collar1.jpg" },
+        { id: "P1", nombre: "Pulsera Esclava", cat: "Pulseras", precio: 90, url: "https://i.ibb.co/XYZ4/pulsera1.jpg" }
     ];
 
-    let joyaSeleccionada = null;
-    const catalogoDiv = document.getElementById('catalogo');
+    let currentJoya = null;
+    let clientIdActual = null;
 
-    // Cargar el catálogo visualmente
-    misProductos.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'joya-card';
-        card.onclick = () => {
-            document.querySelectorAll('.joya-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            joyaSeleccionada = p.url;
-        };
-        card.innerHTML = `
-            <img src="${p.url}" alt="${p.nombre}">
-            <div class="joya-info">
-                <strong>${p.nombre}</strong><br>
-                <small>${p.id}</small>
-            </div>
-        `;
-        catalogoDiv.appendChild(card);
-    });
+    function renderCatalog(category = 'Todos') {
+        const catDiv = document.getElementById('catalogo');
+        catDiv.innerHTML = '';
+        const filtered = category === 'Todos' ? misProductos : misProductos.filter(p => p.cat === category);
+        
+        filtered.forEach(p => {
+            const card = document.createElement('div');
+            card.className = `joya-card ${currentJoya?.id === p.id ? 'selected' : ''}`;
+            card.onclick = () => {
+                currentJoya = p;
+                renderCatalog(category);
+                updatePrice();
+            };
+            card.innerHTML = `<img src="${p.url}"><div class="joya-info"><strong>${p.nombre}</strong><br>$${p.precio} (Base)</div>`;
+            catDiv.appendChild(card);
+        });
+    }
+
+    function filterCat(cat, btn) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderCatalog(cat);
+    }
+
+    function updatePrice() {
+        if (!currentJoya) return;
+        const mult = document.getElementById('metalSelect').value;
+        const total = currentJoya.precio * mult;
+        document.getElementById('totalPrice').innerText = `Total Est: $${total} USD`;
+    }
 
     async function enviarPedido() {
-        const foto = document.getElementById('fotoCliente').files[0];
-        const nombre = document.getElementById('nombreCliente').value;
+        const foto = document.getElementById('foto').files[0];
+        const nombre = document.getElementById('nombre').value;
+        if (!currentJoya || !foto || !nombre) { alert("Completa los datos"); return; }
 
-        if (!joyaSeleccionada || !foto || !nombre) {
-            alert("Por favor: Seleccione una joya, suba su foto e ingrese su nombre.");
-            return;
-        }
-
-        document.getElementById('btnEnviar').disabled = true;
         document.getElementById('status-area').style.display = 'block';
+        document.getElementById('btnEnviar').disabled = true;
 
         const formData = new FormData();
         formData.append('userImage', foto);
-        formData.append('catalogPath', joyaSeleccionada);
+        formData.append('catalogPath', currentJoya.url);
         formData.append('clientName', nombre);
 
-        try {
-            const res = await fetch('/send-to-telegram', { method: 'POST', body: formData });
-            const data = await res.json();
-            
-            if (data.success) {
-                document.getElementById('msg-estado').innerHTML = "✅ **Pedido recibido.** El diseñador está trabajando en su imagen. Por favor, no cierre esta ventana.";
-                iniciarEspera(data.clientId);
-            }
-        } catch (e) {
-            alert("Error de conexión. Intente nuevamente.");
-            document.getElementById('btnEnviar').disabled = false;
+        const res = await fetch('/send-to-telegram', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            clientIdActual = data.clientId;
+            iniciarEspera(data.clientId);
         }
     }
 
-    function iniciarEspera(clientId) {
-        const interval = setInterval(async () => {
-            const res = await fetch(`/check-edition/${clientId}`);
+    function iniciarEspera(id) {
+        const int = setInterval(async () => {
+            const res = await fetch(`/check-edition/${id}`);
             const data = await res.json();
-            
             if (data.ready) {
-                clearInterval(interval);
-                document.getElementById('msg-estado').innerHTML = "✨ **¡Su diseño está listo!**";
+                clearInterval(int);
+                document.getElementById('status-msg').innerHTML = "✨ **¡Tu diseño exclusivo está listo!**";
                 const img = document.getElementById('final-design');
                 img.src = data.url;
                 img.style.display = 'block';
+                document.getElementById('btnWA').style.display = 'block';
             }
         }, 5000);
     }
+
+    function irAWhatsApp() {
+        const metal = document.getElementById('metalSelect').selectedOptions[0].getAttribute('data-name');
+        const total = document.getElementById('totalPrice').innerText;
+        const mensaje = encodeURIComponent(`¡Hola! Me encanta este diseño personalizado.\n\n💍 Joya: ${currentJoya.nombre}\n🛠 Metal: ${metal}\n💰 Presupuesto: ${total}\n🆔 Referencia Diseño: ${clientIdActual}\n\n¿Cómo puedo proceder con el pago?`);
+        window.open(`https://wa.me/TUNUMEROWHATSAPP?text=${mensaje}`, '_blank');
+    }
+
+    renderCatalog();
 </script>
 
 </body>
