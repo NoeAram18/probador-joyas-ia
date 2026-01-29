@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const upload = multer({ dest: 'uploads/' });
 
-app.use(express.static('public'));
+app.use(express.static('.'));
 app.use(express.json());
 
 let buzónEdiciones = {}; 
@@ -91,3 +91,4 @@ app.get('/check-edition/:clientId', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor listo`));
+
