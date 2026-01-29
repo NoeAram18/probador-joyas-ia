@@ -19,11 +19,9 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
 app.get('/', (req, res) => {
-    const rootPath = path.join(__dirname, 'index.html');
-    const publicPath = path.join(__dirname, 'public', 'index.html');
-    if (fs.existsSync(rootPath)) return res.sendFile(rootPath);
-    if (fs.existsSync(publicPath)) return res.sendFile(publicPath);
-    res.send('Servidor activo. Archivo index.html no encontrado.');
+    const paths = [path.join(__dirname, 'index.html'), path.join(__dirname, 'public', 'index.html')];
+    const validPath = paths.find(p => fs.existsSync(p));
+    validPath ? res.sendFile(validPath) : res.send('No se encontró index.html');
 });
 
 app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
@@ -34,8 +32,12 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
 
     if (!userFile) return res.status(400).json({ success: false });
 
+    // --- CAMBIO CLAVE: RESPONDER A LA WEB DE INMEDIATO ---
+    // Esto hace que el "Procesando..." desaparezca al instante en el navegador
+    res.json({ success: true, clientId: clientId });
+
+    // --- EL RESTO DEL PROCESO OCURRE EN "SEGUNDO PLANO" ---
     try {
-        // 1. ENVIAR FOTO DEL CLIENTE
         const form1 = new FormData();
         form1.append('chat_id', CHAT_ID);
         form1.append('photo', fs.createReadStream(userFile.path));
@@ -45,13 +47,8 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
             headers: form1.getHeaders()
         });
 
-        // 2. RESPONDER A LA WEB INMEDIATAMENTE
-        // Esto quita el mensaje de "Procesando..." en la página
-        res.json({ success: true, clientId: clientId });
-
-        // 3. INTENTAR ENVIAR LA JOYA (En segundo plano)
         const messageId = res1.data.result.message_id;
-        
+
         try {
             const responseImg = await axios.get(catalogPath, { responseType: 'arraybuffer', timeout: 5000 });
             const form2 = new FormData();
@@ -63,8 +60,7 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
             await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, form2, {
                 headers: form2.getHeaders()
             });
-        } catch (errImg) {
-            // Si falla la imagen, mandamos solo el link para que no te quedes sin la info
+        } catch (errorJoya) {
             await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
                 chat_id: CHAT_ID,
                 text: `🔗 Link de la joya: ${catalogPath}`,
@@ -72,18 +68,16 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
             });
         }
 
-        // Limpiar archivo temporal
         if (fs.existsSync(userFile.path)) fs.unlinkSync(userFile.path);
 
-    } catch (error) {
-        console.error('Error:', error.message);
-        if (!res.headersSent) res.status(500).json({ success: false });
+    } catch (errorGeneral) {
+        console.error('Error en proceso Telegram:', errorGeneral.message);
     }
 });
 
 app.post('/telegram-webhook', async (req, res) => {
     const msg = req.body.message;
-    if (msg && msg.reply_to_message && msg.photo) {
+    if (msg?.reply_to_message && msg?.photo) {
         const text = msg.reply_to_message.caption || "";
         const match = text.match(/ID Cliente: (\d+)/);
         if (match) {
@@ -101,4 +95,4 @@ app.get('/check-edition/:clientId', (req, res) => {
     res.json({ ready: !!buzónEdiciones[id], url: buzónEdiciones[id] || null });
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`Puerto: ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Servidor activo`));
