@@ -6,42 +6,36 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-// PORT único para Render o local
 const PORT = process.env.PORT || 10000; 
 
-// Configuración de rutas estáticas (Maneja si está en /public o en la raíz)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
-
 app.use(express.json());
 const upload = multer({ dest: 'uploads/' });
 
 let buzónEdiciones = {}; 
 
-// Variables de entorno de Render
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
-// --- RUTA PRINCIPAL ---
 app.get('/', (req, res) => {
-    const publicPath = path.join(__dirname, 'public', 'index.html');
     const rootPath = path.join(__dirname, 'index.html');
-    if (fs.existsSync(publicPath)) return res.sendFile(publicPath);
+    const publicPath = path.join(__dirname, 'public', 'index.html');
     if (fs.existsSync(rootPath)) return res.sendFile(rootPath);
-    res.status(404).send('❌ Error: No encontré el archivo index.html');
+    if (fs.existsSync(publicPath)) return res.sendFile(publicPath);
+    res.send('Servidor activo. Archivo index.html no encontrado.');
 });
 
-// --- ENVÍO DE PEDIDO ---
 app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
+    const userFile = req.file;
+    const catalogPath = req.body.catalogPath; 
+    const clientName = req.body.clientName;
+    const clientId = Date.now();
+
+    if (!userFile) return res.status(400).json({ success: false });
+
     try {
-        const userFile = req.file;
-        const catalogPath = req.body.catalogPath; 
-        const clientName = req.body.clientName;
-        const clientId = Date.now();
-
-        if (!userFile) return res.status(400).json({ success: false, error: 'Falta imagen' });
-
-        // PASO 1: ENVIAR FOTO DEL CLIENTE (Lo más importante)
+        // 1. ENVIAR FOTO DEL CLIENTE
         const form1 = new FormData();
         form1.append('chat_id', CHAT_ID);
         form1.append('photo', fs.createReadStream(userFile.path));
@@ -51,33 +45,29 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
             headers: form1.getHeaders()
         });
 
-        const messageId = res1.data.result.message_id;
-
-        // PASO 2: RESPONDER A LA WEB (Para que no se quede "Procesando")
+        // 2. RESPONDER A LA WEB INMEDIATAMENTE
+        // Esto quita el mensaje de "Procesando..." en la página
         res.json({ success: true, clientId: clientId });
 
-        // PASO 3: ENVIAR FOTO DEL CATÁLOGO (En segundo plano)
+        // 3. INTENTAR ENVIAR LA JOYA (En segundo plano)
+        const messageId = res1.data.result.message_id;
+        
         try {
-            // Descarga con timeout para no bloquear el proceso
-            const responseImg = await axios.get(catalogPath, { responseType: 'arraybuffer', timeout: 8000 });
-            const imageBuffer = Buffer.from(responseImg.data, 'binary');
-            
+            const responseImg = await axios.get(catalogPath, { responseType: 'arraybuffer', timeout: 5000 });
             const form2 = new FormData();
             form2.append('chat_id', CHAT_ID);
-            // Forzamos extensión jpg para mejorar compatibilidad con .avif
-            form2.append('photo', imageBuffer, { filename: 'pieza.jpg', contentType: 'image/jpeg' }); 
-            form2.append('caption', `💍 **PIEZA SELECCIONADA**\nReferencia: ${catalogPath}`);
+            form2.append('photo', Buffer.from(responseImg.data), { filename: 'joya.jpg' });
+            form2.append('caption', `💍 **JOYA SELECCIONADA**`);
             form2.append('reply_to_message_id', messageId);
 
             await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, form2, {
                 headers: form2.getHeaders()
             });
-        } catch (errorImg) {
-            console.error('Error enviando joya:', errorImg.message);
-            // Fallback si la imagen falla
+        } catch (errImg) {
+            // Si falla la imagen, mandamos solo el link para que no te quedes sin la info
             await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
                 chat_id: CHAT_ID,
-                text: `⚠️ No se pudo previsualizar la joya.\n🔗 Link: ${catalogPath}`,
+                text: `🔗 Link de la joya: ${catalogPath}`,
                 reply_to_message_id: messageId
             });
         }
@@ -86,12 +76,11 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
         if (fs.existsSync(userFile.path)) fs.unlinkSync(userFile.path);
 
     } catch (error) {
-        console.error('❌ Error general:', error.message);
+        console.error('Error:', error.message);
         if (!res.headersSent) res.status(500).json({ success: false });
     }
 });
 
-// --- WEBHOOK: RECIBIR EDICIÓN ---
 app.post('/telegram-webhook', async (req, res) => {
     const msg = req.body.message;
     if (msg && msg.reply_to_message && msg.photo) {
@@ -107,12 +96,9 @@ app.post('/telegram-webhook', async (req, res) => {
     res.sendStatus(200);
 });
 
-// --- CONSULTA DEL CLIENTE ---
 app.get('/check-edition/:clientId', (req, res) => {
     const id = req.params.clientId;
     res.json({ ready: !!buzónEdiciones[id], url: buzónEdiciones[id] || null });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor Boutique listo en puerto ${PORT}`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Puerto: ${PORT}`));
