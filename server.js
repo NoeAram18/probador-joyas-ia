@@ -41,9 +41,14 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 let buzónEdiciones = {};
 
-// --- RUTA PRINCIPAL (Solución al Cannot GET /) ---
+// Reemplaza la ruta del '/' por esta que es más robusta:
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    const indexPath = path.join(__dirname, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send("Error: El archivo index.html no existe en el servidor. Verifica el nombre en GitHub.");
+    }
 });
 
 // --- RUTAS PÚBLICAS CATÁLOGO ---
@@ -171,3 +176,4 @@ app.get('/check-edition/:clientId', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor Luxury corriendo en puerto ${PORT}`);
 });
+
