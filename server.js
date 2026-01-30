@@ -4,44 +4,40 @@ const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
-const mongoose = require('mongoose'); // IMPORTANTE: Esto faltaba arriba
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Configuración DB
+// Conexión a MongoDB
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("✅ Conectado a MongoDB"))
     .catch(err => console.error("❌ Error DB:", err));
 
-// Esquema con Galería (Array de imágenes)
-const ProductoSchema = new mongoose.Schema({
+// Modelos
+const Producto = mongoose.model('Producto', new mongoose.Schema({
     nombre: String,
     categoria: String,
     precioBase: Number,
     imagenes: [String], 
     stock: { type: Boolean, default: true }
-});
-const Producto = mongoose.model('Producto', ProductoSchema);
+}));
 
-const VentaSchema = new mongoose.Schema({
+const Venta = mongoose.model('Venta', new mongoose.Schema({
     cliente: String,
     joya: String,
     fecha: { type: Date, default: Date.now }
-});
-const Venta = mongoose.model('Venta', VentaSchema);
+}));
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(__dirname));
 app.use(express.json());
+app.use(express.static(__dirname));
 const upload = multer({ dest: 'uploads/' });
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 let buzónEdiciones = {};
 
-// --- RUTAS ---
-
+// --- RUTAS PÚBLICAS ---
 app.get('/api/productos', async (req, res) => {
     try {
         const productos = await Producto.find({ stock: true });
@@ -56,75 +52,61 @@ app.post('/send-to-telegram', upload.single('userImage'), async (req, res) => {
 
     try {
         await Venta.create({ cliente: clientName, joya: joyaNombre });
-
-        // Descargar la joya del catálogo para enviarla como archivo
         const responseImg = await axios.get(catalogPath, { responseType: 'arraybuffer' });
         
         const mediaGroup = [
-            {
-                type: 'photo',
-                media: 'attach://userPhoto',
-                caption: `👤 **NUEVO PEDIDO**\nCliente: ${clientName}\n💍 Joya: ${joyaNombre}\n🆔 ID: ${clientId}`
-            },
-            {
-                type: 'photo',
-                media: 'attach://catalogPhoto'
-            }
+            { type: 'photo', media: 'attach://uPhoto', caption: `👤 PEDIDO: ${clientName}\n💍 Joya: ${joyaNombre}\n🆔 ID: ${clientId}` },
+            { type: 'photo', media: 'attach://cPhoto' }
         ];
 
-        const formData = new FormData();
-        formData.append('chat_id', CHAT_ID);
-        formData.append('media', JSON.stringify(mediaGroup));
-        formData.append('userPhoto', fs.createReadStream(req.file.path));
-        formData.append('catalogPhoto', Buffer.from(responseImg.data), { filename: 'joya.jpg' });
+        const fd = new FormData();
+        fd.append('chat_id', CHAT_ID);
+        fd.append('media', JSON.stringify(mediaGroup));
+        fd.append('uPhoto', fs.createReadStream(req.file.path));
+        fd.append('cPhoto', Buffer.from(responseImg.data), { filename: 'joya.jpg' });
 
-        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMediaGroup`, formData, {
-            headers: formData.getHeaders()
-        });
-
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMediaGroup`, fd, { headers: fd.getHeaders() });
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-    } catch (error) { console.error("Error Telegram:", error.message); }
+    } catch (e) { console.error("Error Telegram:", e.message); }
 });
 
-// Rutas Admin protegidas
-const authAdmin = (req, res, next) => {
+// --- RUTAS ADMIN ---
+const auth = (req, res, next) => {
     if (req.headers['x-admin-password'] === process.env.ADMIN_PASSWORD) next();
-    else res.status(401).json({ error: "Unauthorized" });
+    else res.status(401).send("No autorizado");
 };
 
-app.post('/api/admin/productos', authAdmin, async (req, res) => {
-    const nuevo = await Producto.create(req.body);
-    res.json(nuevo);
+app.post('/api/admin/productos', auth, async (req, res) => {
+    const p = await Producto.create(req.body);
+    res.json(p);
 });
 
-app.patch('/api/admin/productos/:id', authAdmin, async (req, res) => {
-    const prod = await Producto.findByIdAndUpdate(req.params.id, { stock: req.body.stock }, { new: true });
-    res.json(prod);
+app.patch('/api/admin/productos/:id', auth, async (req, res) => {
+    const p = await Producto.findByIdAndUpdate(req.params.id, { stock: req.body.stock }, { new: true });
+    res.json(p);
 });
 
-app.get('/api/admin/ventas', authAdmin, async (req, res) => {
-    const ventas = await Venta.find().sort({ fecha: -1 });
-    res.json(ventas);
+app.get('/api/admin/ventas', auth, async (req, res) => {
+    const v = await Venta.find().sort({ fecha: -1 });
+    res.json(v);
 });
 
+// Webhook y Polling
 app.post('/telegram-webhook', async (req, res) => {
     const msg = req.body.message;
     if (msg?.reply_to_message && msg?.photo) {
-        const text = msg.reply_to_message.caption || "";
-        const match = text.match(/ID: (\d+)/);
+        const match = (msg.reply_to_message.caption || "").match(/ID: (\d+)/);
         if (match) {
-            const clientId = match[1];
             const fileId = msg.photo[msg.photo.length - 1].file_id;
-            const fileRes = await axios.get(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${fileId}`);
-            buzónEdiciones[clientId] = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${fileRes.data.result.file_path}`;
+            const fRes = await axios.get(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getFile?file_id=${fileId}`);
+            buzónEdiciones[match[1]] = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${fRes.data.result.file_path}`;
         }
     }
     res.sendStatus(200);
 });
 
 app.get('/check-edition/:clientId', (req, res) => {
-    const id = req.params.clientId;
-    res.json({ ready: !!buzónEdiciones[id], url: buzónEdiciones[id] || null });
+    res.json({ ready: !!buzónEdiciones[req.params.clientId], url: buzónEdiciones[req.params.clientId] });
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`Servidor activo`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Servidor activo en puerto ${PORT}`));
