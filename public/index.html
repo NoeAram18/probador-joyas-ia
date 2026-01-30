@@ -1,52 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atelier Luxury</title>
+    <style>
+        :root { --oro: #c5a059; }
+        body { font-family: serif; margin: 0; padding: 20px; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .card { border: 1px solid #eee; padding: 10px; cursor: pointer; }
+        .card.selected { border: 2px solid var(--oro); }
+        .card img { width: 100%; height: 200px; object-fit: cover; }
+        .thumbs { display: flex; gap: 5px; justify-content: center; margin-top: 5px; }
+        .thumb { width: 40px; height: 40px; object-fit: cover; border: 1px solid #ccc; }
+        .config { background: #f9f9f9; padding: 20px; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>ATELIER LUXURY</h1>
+    <div class="grid" id="catalogo"></div>
 
-<style>
-    .galeria-preview { display: flex; gap: 5px; justify-content: center; margin-top: 10px; }
-    .thumb { width: 40px; height: 40px; object-fit: cover; cursor: pointer; border: 1px solid #ddd; }
-    .thumb:hover { border-color: var(--oro); }
-</style>
+    <div class="config">
+        <h3 id="joya-selección">Selecciona una joya</h3>
+        <input type="text" id="nombre-cliente" placeholder="Tu nombre">
+        <input type="file" id="foto-cliente" accept="image/*">
+        <button id="btnEnviar" onclick="enviar()">SOLICITAR DISEÑO</button>
+        <div id="status"></div>
+    </div>
 
-<script>
-function renderCatalog(category = 'Todos') {
-    const catDiv = document.getElementById('catalogo');
-    catDiv.innerHTML = '';
-    const filtered = category === 'Todos' ? misProductos : misProductos.filter(p => p.cat === category);
-    
-    filtered.forEach(p => {
-        const card = document.createElement('div');
-        card.className = `joya-card ${currentJoya?.id === p.id ? 'selected' : ''}`;
-        
-        // Generamos miniaturas si hay más de una foto
-        let thumbsHtml = '';
-        if(p.imagenes && p.imagenes.length > 1) {
-            thumbsHtml = `<div class="galeria-preview">` + 
-                p.imagenes.map(img => `<img src="${img}" class="thumb" onclick="event.stopPropagation(); changeMainImg(this, '${p.id}')">`).join('') + 
-                `</div>`;
+    <script>
+        let productos = [];
+        let seleccionada = null;
+
+        async function cargar() {
+            const res = await fetch('/api/productos');
+            productos = await res.json();
+            render();
         }
 
-        card.innerHTML = `
-            <img src="${p.imagenes[0]}" id="main-${p.id}">
-            <div class="joya-info">
-                <strong>${p.nombre}</strong>
-                <span>$${p.precio} USD</span>
-                ${thumbsHtml}
-            </div>
-        `;
-        card.onclick = () => selectJoya(p);
-        catDiv.appendChild(card);
-    });
-}
+        function render() {
+            const div = document.getElementById('catalogo');
+            div.innerHTML = productos.map(p => `
+                <div class="card ${seleccionada?.id === p._id ? 'selected' : ''}" onclick="seleccionar('${p._id}')">
+                    <img src="${p.imagenes[0]}" id="img-${p._id}">
+                    <div class="thumbs">
+                        ${p.imagenes.map(img => `<img src="${img}" class="thumb" onmouseover="document.getElementById('img-${p._id}').src='${img}'">`).join('')}
+                    </div>
+                    <p>${p.nombre}<br><b>$${p.precioBase}</b></p>
+                </div>
+            `).join('');
+        }
 
-function changeMainImg(el, prodId) {
-    document.getElementById(`main-${prodId}`).src = el.src;
-}
+        function seleccionar(id) {
+            const p = productos.find(x => x._id === id);
+            seleccionada = {
+                id: p._id,
+                nombre: p.nombre,
+                url: document.getElementById(`img-${p._id}`).src
+            };
+            document.getElementById('joya-selección').innerText = "Seleccionado: " + p.nombre;
+            render();
+        }
 
-function selectJoya(p) {
-    if(!clientIdActual) {
-        currentJoya = p;
-        // La URL que se enviará a Telegram será la imagen que esté visible actualmente
-        currentJoya.url = document.getElementById(`main-${p.id}`).src;
-        renderCatalog(); 
-        updatePrice();
-    }
-}
-</script>
+        async function enviar() {
+            const file = document.getElementById('foto-cliente').files[0];
+            const nombre = document.getElementById('nombre-cliente').value;
+            if(!seleccionada || !file || !nombre) return alert("Completa los datos");
+
+            const fd = new FormData();
+            fd.append('userImage', file);
+            fd.append('catalogPath', seleccionada.url);
+            fd.append('clientName', nombre);
+            fd.append('joyaNombre', seleccionada.nombre);
+
+            document.getElementById('status').innerText = "Enviando...";
+            const res = await fetch('/send-to-telegram', { method: 'POST', body: fd });
+            const data = await res.json();
+            if(data.success) {
+                document.getElementById('status').innerText = "¡Enviado! Espera tu diseño...";
+            }
+        }
+
+        cargar();
+    </script>
+</body>
+</html>
