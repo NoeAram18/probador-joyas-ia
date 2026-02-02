@@ -3,133 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GEDALIA | Alta Joyería</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+    <title>GEDALIA | Fine Jewelry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --oro: #c5a059; --dark: #0a0a0a; --white: #ffffff; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Montserrat', sans-serif; background: var(--white); color: var(--dark); }
+        :root { --gold: #c5a059; --black: #111; --gray: #f4f4f4; }
+        body { font-family: 'Inter', sans-serif; background: #fff; color: var(--black); }
+        h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+        header { padding: 60px 20px; text-align: center; border-bottom: 1px solid #eee; }
+        header h1 { font-size: 3rem; letter-spacing: 10px; text-transform: uppercase; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; padding: 40px; }
+        .card { cursor: pointer; position: relative; transition: 0.4s; }
+        .card img { width: 100%; height: 400px; object-fit: cover; }
+        .promo-tag { position: absolute; top: 10px; left: 10px; background: var(--gold); color: white; padding: 5px 12px; font-size: 11px; letter-spacing: 1px; }
+
+        /* MODAL PREMIUM */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: none; z-index: 2000; overflow-y: auto; }
+        .modal-grid { display: grid; grid-template-columns: 1.2fr 1fr; height: 100vh; }
+        .gallery-side { background: var(--gray); display: flex; align-items: center; justify-content: center; position: relative; }
+        .gallery-side img { max-width: 80%; max-height: 80vh; object-fit: contain; }
+        .close-btn { position: absolute; top: 30px; left: 30px; font-size: 24px; cursor: pointer; z-index: 10; }
         
-        header { padding: 60px 20px; text-align: center; background: var(--dark); color: white; border-bottom: 4px solid var(--oro); }
-        header h1 { font-family: 'Playfair Display', serif; font-size: 3.5rem; letter-spacing: 12px; font-weight: 300; text-transform: uppercase; }
-        header p { font-size: 0.8rem; letter-spacing: 5px; color: var(--oro); margin-top: 15px; }
-
-        /* Filtros */
-        .nav-filters { display: flex; justify-content: center; gap: 25px; padding: 30px; background: #f9f9f9; flex-wrap: wrap; }
-        .filter-btn { background: none; border: none; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; color: #666; transition: 0.3s; padding-bottom: 5px; }
-        .filter-btn.active, .filter-btn:hover { color: var(--oro); border-bottom: 1px solid var(--oro); }
-
-        .container { max-width: 1400px; margin: 40px auto; padding: 0 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 40px; }
+        .content-side { padding: 80px; display: flex; flex-direction: column; justify-content: center; }
+        .content-side h2 { font-size: 3rem; margin-bottom: 10px; }
+        .price-row { font-size: 1.5rem; margin-bottom: 40px; }
+        .old-price { text-decoration: line-through; color: #999; margin-right: 15px; }
         
-        .product-card { position: relative; cursor: pointer; transition: 0.5s; text-align: center; }
-        .img-wrapper { width: 100%; height: 380px; overflow: hidden; background: #f4f4f4; margin-bottom: 15px; }
-        .product-card img { width: 100%; height: 100%; object-fit: cover; transition: 0.8s; }
-        .product-card:hover img { scale: 1.05; }
-        .product-card h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; letter-spacing: 1px; margin-bottom: 5px; }
-        .price { color: var(--oro); font-size: 1rem; letter-spacing: 1px; }
+        .buy-actions { display: flex; gap: 15px; margin-top: 30px; }
+        .btn { padding: 18px 30px; border: none; cursor: pointer; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; flex: 1; }
+        .btn-gold { background: var(--gold); color: white; }
+        .btn-black { background: var(--black); color: white; }
+        .btn:hover { opacity: 0.8; }
 
-        /* Modal Sub-Menú Detalle */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.98); display: none; z-index: 1000; overflow-y: auto; }
-        .modal-content { max-width: 1100px; margin: 40px auto; padding: 40px; display: flex; flex-wrap: wrap; gap: 60px; position: relative; }
-        .close-modal { position: absolute; top: 20px; right: 20px; font-size: 30px; cursor: pointer; color: var(--dark); }
+        .thumbs { position: absolute; bottom: 40px; display: flex; gap: 10px; }
+        .thumbs img { width: 60px; height: 60px; border: 1px solid #ddd; cursor: pointer; background: #fff; }
 
-        .gallery-main { flex: 1.2; min-width: 320px; }
-        .main-view { width: 100%; height: 500px; background: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid #eee; }
-        .main-view img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .thumbs-row { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
-        .thumbs-row img { width: 70px; height: 70px; object-fit: cover; cursor: pointer; border: 1px solid #eee; transition: 0.3s; }
-        .thumbs-row img:hover { border-color: var(--oro); }
-
-        .details-side { flex: 1; min-width: 320px; padding-top: 40px; }
-        .details-side h2 { font-family: 'Playfair Display', serif; font-size: 2.2rem; margin-bottom: 15px; }
-        .modal-price { font-size: 1.5rem; color: var(--oro); margin-bottom: 25px; }
-        
-        .action-box { background: #fdfdfd; padding: 25px; border: 1px solid #eee; }
-        .btn-premium { background: var(--dark); color: white; border: none; padding: 16px; width: 100%; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
-        .btn-premium:hover { background: var(--oro); }
-        .input-premium { background: #fff; border: 1px solid #ddd; padding: 12px; width: 100%; margin-bottom: 15px; font-family: inherit; }
+        @media (max-width: 900px) { .modal-grid { grid-template-columns: 1fr; } .content-side { padding: 40px; } }
     </style>
 </head>
 <body>
 
 <header>
     <h1>GEDALIA</h1>
-    <p>PIEZAS ÚNICAS • DISEÑO EXCLUSIVO</p>
+    <p style="letter-spacing: 5px; color: #888;">ELEGANCIA ETERNA</p>
 </header>
 
-<div class="nav-filters">
-    <button class="filter-btn active" onclick="filterCat('Todos', this)">Todos</button>
-    <button class="filter-btn" onclick="filterCat('Anillos', this)">Anillos</button>
-    <button class="filter-btn" onclick="filterCat('Dije', this)">Dijes</button>
-    <button class="filter-btn" onclick="filterCat('Collares', this)">Collares</button>
-    <button class="filter-btn" onclick="filterCat('Aretes', this)">Aretes</button>
-    <button class="filter-btn" onclick="filterCat('Pulseras', this)">Pulseras</button>
-</div>
+<div class="grid" id="catalogo"></div>
 
-<div class="container">
-    <div class="grid" id="catalogo"></div>
-</div>
-
-<div id="productModal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal" onclick="closeModal()">&times;</span>
-        <div id="modalBody" style="display:flex; flex-wrap:wrap; gap:50px; width:100%;"></div>
-    </div>
+<div id="modal" class="modal">
+    <div class="close-btn" onclick="closeModal()">✕</div>
+    <div class="modal-grid" id="modal-content"></div>
 </div>
 
 <script>
     let prods = [];
+
     async function cargar() {
         const res = await fetch('/api/productos');
         prods = await res.json();
-        renderItems(prods);
+        render();
     }
 
-    function renderItems(data) {
+    function render() {
         const div = document.getElementById('catalogo');
-        div.innerHTML = data.map(p => `
-            <div class="product-card" onclick="openModal('${p._id}')">
-                <div class="img-wrapper"><img src="${p.imagenes[0]}"></div>
-                <h3>${p.nombre}</h3>
-                <div class="price">$${p.precioBase} USD</div>
+        div.innerHTML = prods.map(p => `
+            <div class="card" onclick="openModal('${p._id}')">
+                ${p.descuento > 0 ? `<div class="promo-tag">-${p.descuento}%</div>` : ''}
+                ${p.envioGratis ? `<div class="promo-tag" style="top:40px">ENVÍO GRATIS</div>` : ''}
+                <img src="${p.imagenes[0]}">
+                <div style="padding:15px; text-align:center;">
+                    <h3 style="letter-spacing:2px;">${p.nombre}</h3>
+                    <p style="color:var(--gold)">$${p.precioBase} USD</p>
+                </div>
             </div>
         `).join('');
     }
 
-    function filterCat(cat, btn) {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const filtered = cat === 'Todos' ? prods : prods.filter(p => p.categoria === cat);
-        renderItems(filtered);
-    }
-
-    function openModal(id) {
+    async function openModal(id) {
         const p = prods.find(x => x._id === id);
-        const body = document.getElementById('modalBody');
-        body.innerHTML = `
-            <div class="gallery-main">
-                <div class="main-view"><img src="${p.imagenes[0]}" id="expImg"></div>
-                <div class="thumbs-row">
-                    ${p.imagenes.map(i => `<img src="${i}" onclick="document.getElementById('expImg').src='${i}'">`).join('')}
+        // Track view
+        fetch(`/api/productos/view/${id}`, { method: 'POST' });
+
+        const finalPrice = p.descuento > 0 ? p.precioBase * (1 - p.descuento/100) : p.precioBase;
+
+        document.getElementById('modal-content').innerHTML = `
+            <div class="gallery-side">
+                <img src="${p.imagenes[0]}" id="main-img">
+                <div class="thumbs">
+                    ${p.imagenes.map(i => `<img src="${i}" onclick="document.getElementById('main-img').src='${i}'">`).join('')}
                 </div>
             </div>
-            <div class="details-side">
+            <div class="content-side">
+                <p style="color:var(--gold); letter-spacing:3px; margin-bottom:10px;">${p.categoria.toUpperCase()}</p>
                 <h2>${p.nombre}</h2>
-                <div class="modal-price">$${p.precioBase} USD</div>
-                <div class="action-box">
-                    <input type="text" id="cN" class="input-premium" placeholder="Nombre completo">
-                    <p style="font-size:10px; letter-spacing:1px; margin-bottom:5px;">FOTO DE REFERENCIA PARA MONTAJE:</p>
-                    <input type="file" id="cF" class="input-premium">
-                    <button class="btn-premium" onclick="enviarPedido('${p.nombre}')">Solicitar Montaje</button>
-                    <button class="btn-premium" style="background:#25d366;" onclick="window.open('https://wa.me/TUNUMERO')">WhatsApp Directo</button>
+                <div class="price-row">
+                    ${p.descuento > 0 ? `<span class="old-price">$${p.precioBase}</span>` : ''}
+                    <span>$${finalPrice.toFixed(2)} USD</span>
                 </div>
+                <p style="line-height:1.8; color:#666; margin-bottom:40px;">Una pieza maestra diseñada para perdurar. Elaborada bajo los más altos estándares de calidad de la casa GEDALIA.</p>
+                
+                <div class="buy-actions">
+                    <button class="btn btn-black" onclick="comprar('${p.nombre}', ${finalPrice}, 'Carrito')">Añadir al Carrito</button>
+                    <button class="btn btn-gold" onclick="comprar('${p.nombre}', ${finalPrice}, 'Compra Rápida')">Compra Rápida</button>
+                </div>
+                <p style="font-size:12px; color:#999; margin-top:20px;">🛡️ Compra segura | Garantía de autenticidad</p>
             </div>
         `;
-        document.getElementById('productModal').style.display = 'block';
+        document.getElementById('modal').style.display = 'block';
     }
 
-    function closeModal() { document.getElementById('productModal').style.display = 'none'; }
+    async function comprar(nombre, monto, tipo) {
+        await fetch('/api/comprar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ cliente: "Usuario Web", joya: nombre, monto, tipo })
+        });
+        alert(`¡Gracias! Se ha procesado tu ${tipo} para la pieza ${nombre}`);
+    }
+
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
     cargar();
 </script>
 </body>
