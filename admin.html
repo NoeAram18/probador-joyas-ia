@@ -2,72 +2,94 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Luxury</title>
+    <title>Panel Admin - Luxury</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #eee; }
-        .card { background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: 20px auto; }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
-        button { background: #1a1a1a; color: white; border: none; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        .online { color: green; font-weight: bold; }
-        .offline { color: red; font-weight: bold; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 2px solid #c5a059; padding-bottom: 10px; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background: #1a1a1a; color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #c5a059; }
+        .btn-del { background: #dc3545; width: auto; padding: 5px 10px; font-size: 12px; }
+        .btn-toggle { background: #007bff; width: auto; padding: 5px 10px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+        th, td { border-bottom: 1px solid #eee; padding: 12px; text-align: left; }
+        .img-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Gestión de Inventario</h2>
-        <input type="text" id="n" placeholder="Nombre">
-        <select id="c"><option value="Anillos">Anillos</option><option value="Collares">Collares</option></select>
-        <input type="number" id="p" placeholder="Precio Base">
-        <input type="text" id="i1" placeholder="URL Foto 1 (Principal)">
-        <input type="text" id="i2" placeholder="URL Foto 2">
-        <input type="text" id="i3" placeholder="URL Foto 3">
-        <button onclick="subir()">GUARDAR PIEZA</button>
-        
+    <div class="container">
+        <h2>💎 Administración de Catálogo</h2>
+        <input type="text" id="n" placeholder="Nombre de la joya">
+        <select id="c">
+            <option value="Anillos">Anillos</option>
+            <option value="Collares">Collares</option>
+            <option value="Pulseras">Pulseras</option>
+        </select>
+        <input type="number" id="p" placeholder="Precio Base USD">
+        <input type="text" id="i1" placeholder="URL Foto Principal (Obligatoria)">
+        <input type="text" id="i2" placeholder="URL Foto 2 (Opcional)">
+        <input type="text" id="i3" placeholder="URL Foto 3 (Opcional)">
+        <button onclick="subir()">PUBLICAR EN LA WEB</button>
+
         <table id="lista">
-            <thead><tr><th>Pieza</th><th>Estado</th><th>Acción</th></tr></thead>
+            <thead><tr><th>Imagen</th><th>Pieza</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
 
     <script>
-        let pass = "";
-        window.onload = () => { 
-            pass = prompt("Clave:"); 
-            cargar(); 
-        };
-
         async function cargar() {
-            const res = await fetch('/api/productos');
+            const res = await fetch('/api/admin/productos-todos');
             const data = await res.json();
-            document.querySelector("#lista tbody").innerHTML = data.map(p => `
+            const tbody = document.querySelector("#lista tbody");
+            tbody.innerHTML = data.map(p => `
                 <tr>
+                    <td><img src="${p.imagenes[0]}" class="img-mini"></td>
                     <td>${p.nombre}</td>
-                    <td class="${p.stock?'online':'offline'}">${p.stock?'Activo':'Agotado'}</td>
-                    <td><button onclick="toggle('${p._id}', ${p.stock})">Cambiar</button></td>
+                    <td><small>${p.stock ? '🟢 En Línea' : '🔴 Agotado'}</small></td>
+                    <td>
+                        <button class="btn-toggle" onclick="toggle('${p._id}', ${p.stock})">Cambiar</button>
+                        <button class="btn-del" onclick="eliminar('${p._id}')">Eliminar</button>
+                    </td>
                 </tr>
             `).join('');
         }
 
         async function subir() {
             const imagenes = [document.getElementById('i1').value, document.getElementById('i2').value, document.getElementById('i3').value].filter(v => v);
-            const res = await fetch('/api/admin/productos', {
+            if(!imagenes[0] || !document.getElementById('n').value) return alert("Faltan datos críticos.");
+
+            await fetch('/api/admin/productos', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-password': pass },
-                body: JSON.stringify({ nombre: document.getElementById('n').value, categoria: document.getElementById('c').value, precioBase: document.getElementById('p').value, imagenes })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre: document.getElementById('n').value,
+                    categoria: document.getElementById('c').value,
+                    precioBase: document.getElementById('p').value,
+                    imagenes: imagenes
+                })
             });
-            if(res.ok) { alert("¡Éxito!"); cargar(); }
+            location.reload();
         }
 
         async function toggle(id, s) {
             await fetch(`/api/admin/productos/${id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'x-admin-password': pass },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ stock: !s })
             });
             cargar();
         }
+
+        async function eliminar(id) {
+            if(confirm("¿Eliminar definitivamente esta joya del catálogo?")) {
+                await fetch(`/api/admin/productos/${id}`, { method: 'DELETE' });
+                cargar();
+            }
+        }
+
+        cargar();
     </script>
 </body>
 </html>
