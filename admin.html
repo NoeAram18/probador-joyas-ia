@@ -7,17 +7,19 @@
     <style>
         :root { --gold: #c5a059; --black: #0a0a0a; --bg: #f4f7f6; }
         body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); display: flex; }
-        .sidebar { width: 250px; background: var(--black); height: 100vh; color: white; padding: 30px; position: fixed; }
-        .main { margin-left: 250px; padding: 40px; width: 100%; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .sidebar { width: 260px; background: var(--black); height: 100vh; color: white; padding: 30px; position: fixed; }
+        .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 30px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 5px; }
-        .badge-view { background: #e3f2fd; color: #1976d2; }
-        .badge-click { background: #fff3e0; color: #ef6c00; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; }
-        button { cursor: pointer; border: none; border-radius: 6px; padding: 10px 20px; font-weight: 600; }
-        .btn-edit { background: var(--gold); color: white; margin-right: 5px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+        .badge { padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 5px; }
+        .badge-v { background: #e3f2fd; color: #1976d2; }
+        .badge-i { background: #fff3e0; color: #ef6c00; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { cursor: pointer; border: none; border-radius: 6px; padding: 10px 15px; font-weight: 600; transition: 0.2s; }
+        .btn-stock { background: #f0f0f0; font-size: 11px; }
+        .btn-stock.on { background: #e8f5e9; color: #2e7d32; }
+        .btn-edit { background: var(--gold); color: white; }
         .btn-del { background: #ffebee; color: #c62828; }
         .section { display: none; }
         .active { display: block; }
@@ -27,18 +29,20 @@
 
 <div class="sidebar">
     <h2 style="color:var(--gold); letter-spacing:2px;">GEDALIA</h2>
-    <p onclick="showSection('inventory')" style="cursor:pointer; margin-top:30px;">💎 Inventario & Stats</p>
-    <p onclick="showSection('form-section')" style="cursor:pointer;">✨ Nueva Publicación</p>
+    <div style="margin-top:40px;">
+        <p onclick="showSection('inventory')" style="cursor:pointer; padding:10px 0;">💎 Catálogo & Stats</p>
+        <p onclick="prepareNew()" style="cursor:pointer; padding:10px 0;">✨ Nueva Joya</p>
+    </div>
 </div>
 
 <div class="main">
     <div id="inventory" class="section active">
         <div class="card">
-            <h3>Estadísticas de Joyas</h3>
+            <h3>Gestión de Inventario</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Producto</th>
+                        <th>Pieza</th>
                         <th>Métricas</th>
                         <th>Estado</th>
                         <th>Acciones</th>
@@ -51,9 +55,9 @@
 
     <div id="form-section" class="section">
         <div class="card">
-            <h3 id="form-title">Nueva Joya</h3>
+            <h3 id="form-title">Nueva Publicación</h3>
             <input type="hidden" id="edit-id">
-            <input type="text" id="n" placeholder="Nombre">
+            <input type="text" id="n" placeholder="Nombre de la pieza">
             <select id="c">
                 <option value="Anillos">Anillos</option>
                 <option value="Dije">Dije</option>
@@ -61,15 +65,19 @@
                 <option value="Aretes">Aretes</option>
                 <option value="Pulseras">Pulseras</option>
             </select>
-            <input type="number" id="p" placeholder="Precio Base USD">
-            <input type="number" id="desc" placeholder="% Descuento">
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="p" placeholder="Precio USD">
+                <input type="number" id="desc" placeholder="% Descuento">
+            </div>
             <select id="envio">
                 <option value="false">Envío Pagado</option>
                 <option value="true">Envío Gratis</option>
             </select>
-            <p style="font-size:12px; color:#888;">Si no subes foto, se mantendrá la actual (en edición)</p>
+            <p style="font-size:12px; color:var(--gold);">Fotos (Subir solo las que desea cambiar/agregar):</p>
             <input type="file" id="f1">
-            <button style="background:var(--black); color:white; width:100%; margin-top:10px;" onclick="guardar()">FINALIZAR PUBLICACIÓN</button>
+            <input type="file" id="f2">
+            <input type="file" id="f3">
+            <button id="btn-save" style="background:var(--black); color:white; width:100%; margin-top:20px; padding:15px;" onclick="guardar()">GUARDAR CAMBIOS EN GEDALIA</button>
             <button style="background:#eee; width:100%; margin-top:10px;" onclick="showSection('inventory')">CANCELAR</button>
         </div>
     </div>
@@ -78,13 +86,6 @@
 <script>
     let localProds = [];
 
-    function showSection(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(id === 'form-section' && !document.getElementById('edit-id').value) resetForm();
-        if(id === 'inventory') cargarData();
-    }
-
     async function cargarData() {
         const res = await fetch('/api/admin/productos-todos');
         localProds = await res.json();
@@ -92,44 +93,72 @@
             <tr>
                 <td><b>${p.nombre}</b><br><small>${p.categoria}</small></td>
                 <td>
-                    <span class="badge badge-view">${p.vistas} Vistas</span>
-                    <span class="badge badge-click">${p.interacciones} Interacciones</span>
+                    <span class="badge badge-v">${p.vistas} 👀</span>
+                    <span class="badge badge-i">${p.interacciones} ⚡</span>
                 </td>
-                <td>${p.stock ? '✅ En Stock' : '❌ Agotado'}</td>
+                <td>
+                    <button class="btn-stock ${p.stock?'on':''}" onclick="toggleStock('${p._id}', ${p.stock})">
+                        ${p.stock ? 'DISPONIBLE' : 'AGOTADO'}
+                    </button>
+                </td>
                 <td>
                     <button class="btn-edit" onclick="editar('${p._id}')">Editar</button>
-                    <button class="btn-del" onclick="eliminar('${p._id}')">Eliminar</button>
+                    <button class="btn-del" onclick="eliminar('${p._id}')">🗑️</button>
                 </td>
             </tr>
         `).join('');
     }
 
+    function showSection(id) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function prepareNew() {
+        document.getElementById('edit-id').value = "";
+        document.getElementById('form-title').innerText = "Nueva Publicación";
+        document.querySelectorAll('input').forEach(i => i.value = "");
+        showSection('form-section');
+    }
+
     function editar(id) {
         const p = localProds.find(x => x._id === id);
-        if(!p) return;
-
         document.getElementById('edit-id').value = p._id;
         document.getElementById('n').value = p.nombre;
         document.getElementById('c').value = p.categoria;
         document.getElementById('p').value = p.precioBase;
         document.getElementById('desc').value = p.descuento;
         document.getElementById('envio').value = p.envioGratis.toString();
-        
         document.getElementById('form-title').innerText = "Editando: " + p.nombre;
         showSection('form-section');
     }
 
-    async function guardar() {
-        const id = document.getElementById('edit-id').value;
-        const file = document.getElementById('f1').files[0];
-        let imagenes = [];
+    async function toggleStock(id, current) {
+        await fetch(`/api/admin/productos/${id}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ stock: !current })
+        });
+        cargarData();
+    }
 
-        if(file) {
-            const fd = new FormData();
-            fd.append('image', file);
-            const resImg = await fetch('/api/admin/upload-image', { method: 'POST', body: fd });
-            const dataImg = await resImg.json();
-            imagenes.push(dataImg.url);
+    async function guardar() {
+        const btn = document.getElementById('btn-save');
+        btn.disabled = true;
+        btn.innerText = "PROCESANDO...";
+
+        const id = document.getElementById('edit-id').value;
+        const fotos = [document.getElementById('f1').files[0], document.getElementById('f2').files[0], document.getElementById('f3').files[0]];
+        let nuevasUrls = [];
+
+        for(let f of fotos) {
+            if(f) {
+                const fd = new FormData();
+                fd.append('image', f);
+                const r = await fetch('/api/admin/upload-image', { method: 'POST', body: fd });
+                const d = await r.json();
+                nuevasUrls.push(d.url);
+            }
         }
 
         const payload = {
@@ -139,32 +168,23 @@
             descuento: Number(document.getElementById('desc').value) || 0,
             envioGratis: document.getElementById('envio').value === "true"
         };
-        if(imagenes.length > 0) payload.imagenes = imagenes;
+        if(nuevasUrls.length > 0) payload.imagenes = nuevasUrls;
 
-        const method = id ? 'PATCH' : 'POST';
-        const url = id ? `/api/admin/productos/${id}` : '/api/admin/productos';
-
-        await fetch(url, {
-            method,
+        await fetch(id ? `/api/admin/productos/${id}` : '/api/admin/productos', {
+            method: id ? 'PATCH' : 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
         });
 
-        alert("¡Éxito! Base de datos actualizada.");
-        resetForm();
+        alert("Operación completada");
+        btn.disabled = false;
+        btn.innerText = "GUARDAR CAMBIOS EN GEDALIA";
+        cargarData();
         showSection('inventory');
     }
 
-    function resetForm() {
-        document.getElementById('edit-id').value = "";
-        document.getElementById('form-title').innerText = "Nueva Joya";
-        document.getElementById('n').value = "";
-        document.getElementById('p').value = "";
-        document.getElementById('desc').value = "";
-    }
-
     async function eliminar(id) {
-        if(confirm("¿Seguro de eliminar esta pieza?")) {
+        if(confirm("¿Eliminar permanentemente?")) {
             await fetch(`/api/admin/productos/${id}`, { method: 'DELETE' });
             cargarData();
         }
