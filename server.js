@@ -4,13 +4,13 @@ const axios = require('axios');
 const FormData = require('form-data');
 const mongoose = require('mongoose');
 const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
 mongoose.connect(process.env.MONGO_URI);
 
-// ESQUEMA DE PRODUCTO MEJORADO
 const Producto = mongoose.model('Producto', new mongoose.Schema({
     nombre: String,
     categoria: String,
@@ -54,7 +54,10 @@ app.post('/api/admin/upload-image', upload.single('image'), async (req, res) => 
         const response = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, form, { headers: form.getHeaders() });
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.json({ url: response.data.data.url });
-    } catch (e) { res.status(500).send("Error en imagen"); }
+    } catch (e) { 
+        if (req.file) fs.unlinkSync(req.file.path);
+        res.status(500).send("Error en imagen"); 
+    }
 });
 
 app.post('/api/admin/productos', async (req, res) => {
@@ -62,10 +65,8 @@ app.post('/api/admin/productos', async (req, res) => {
 });
 
 app.patch('/api/admin/productos/:id', async (req, res) => {
-    try {
-        const p = await Producto.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.json(p);
-    } catch (e) { res.status(500).send(e); }
+    const p = await Producto.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(p);
 });
 
 app.delete('/api/admin/productos/:id', async (req, res) => {
