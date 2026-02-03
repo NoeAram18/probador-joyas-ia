@@ -10,23 +10,17 @@ const PORT = process.env.PORT || 10000;
 
 mongoose.connect(process.env.MONGO_URI);
 
-// ESQUEMAS
+// ESQUEMA DE PRODUCTO MEJORADO
 const Producto = mongoose.model('Producto', new mongoose.Schema({
     nombre: String,
     categoria: String,
     precioBase: Number,
     imagenes: [String],
     vistas: { type: Number, default: 0 },
-    interacciones: { type: Number, default: 0 }, // Clicks en botones de compra
+    interacciones: { type: Number, default: 0 },
     stock: { type: Boolean, default: true },
     descuento: { type: Number, default: 0 },
     envioGratis: { type: Boolean, default: false }
-}));
-
-const Pedido = mongoose.model('Pedido', new mongoose.Schema({
-    idProducto: mongoose.Schema.Types.ObjectId,
-    monto: Number,
-    fecha: { type: Date, default: Date.now }
 }));
 
 app.use(express.json());
@@ -49,14 +43,8 @@ app.post('/api/productos/interact/:id', async (req, res) => {
 });
 
 // --- API ADMIN ---
-app.get('/api/admin/productos-detallado', async (req, res) => {
-    // Agregamos compras por producto
-    const prods = await Producto.find().lean();
-    const prodsConVentas = await Promise.all(prods.map(async (p) => {
-        const ventas = await Pedido.countDocuments({ idProducto: p._id });
-        return { ...p, ventas };
-    }));
-    res.json(prodsConVentas);
+app.get('/api/admin/productos-todos', async (req, res) => {
+    res.json(await Producto.find().sort({ _id: -1 }));
 });
 
 app.post('/api/admin/upload-image', upload.single('image'), async (req, res) => {
@@ -64,19 +52,20 @@ app.post('/api/admin/upload-image', upload.single('image'), async (req, res) => 
         const form = new FormData();
         form.append('image', fs.createReadStream(req.file.path));
         const response = await axios.post(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, form, { headers: form.getHeaders() });
-        fs.unlinkSync(req.file.path);
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.json({ url: response.data.data.url });
-    } catch (e) { res.status(500).send("Error imagen"); }
+    } catch (e) { res.status(500).send("Error en imagen"); }
 });
 
 app.post('/api/admin/productos', async (req, res) => {
     res.json(await Producto.create(req.body));
 });
 
-// NUEVA RUTA: EDITAR
 app.patch('/api/admin/productos/:id', async (req, res) => {
-    const actualizado = await Producto.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(actualizado);
+    try {
+        const p = await Producto.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(p);
+    } catch (e) { res.status(500).send(e); }
 });
 
 app.delete('/api/admin/productos/:id', async (req, res) => {
