@@ -2,49 +2,61 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gedalia Master Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Gedalia Admin | ERP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #c5a059; --black: #0a0a0a; --gray: #f4f7f6; --white: #ffffff; }
-        body { font-family: 'Inter', sans-serif; background: var(--gray); display: flex; margin: 0; }
-        .sidebar { width: 260px; background: var(--black); height: 100vh; color: white; padding: 40px 20px; position: fixed; }
-        .main { margin-left: 260px; padding: 50px; width: 100%; }
-        .card { background: var(--white); padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        :root { --gold: #c5a059; --black: #0a0a0a; --bg: #f4f7f6; }
+        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); display: flex; }
+        .sidebar { width: 250px; background: var(--black); height: 100vh; color: white; padding: 30px; position: fixed; }
+        .main { margin-left: 250px; padding: 40px; width: 100%; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+        th { color: #888; text-transform: uppercase; font-size: 11px; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+        .badge-view { background: #e3f2fd; color: #1976d2; }
+        .badge-click { background: #fff3e0; color: #ef6c00; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; }
+        button { cursor: pointer; border: none; border-radius: 6px; padding: 10px; }
+        .btn-edit { background: var(--gold); color: white; }
+        .btn-del { background: #ffeded; color: #d32f2f; }
         .section { display: none; }
         .active { display: block; }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
-        .btn-add { background: var(--black); color: white; font-weight: bold; cursor: pointer; }
-        .btn-add:disabled { background: #888; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h2 style="color:var(--gold); text-align:center; letter-spacing:4px;">GEDALIA</h2>
-    <button onclick="showSec('stats')" style="background:none; color:white; border:none; padding:15px; cursor:pointer; width:100%; text-align:left;">📊 Estadísticas</button>
-    <button onclick="showSec('inventory')" style="background:none; color:white; border:none; padding:15px; cursor:pointer; width:100%; text-align:left;">💎 Inventario</button>
-    <button onclick="showSec('new')" style="background:none; color:white; border:none; padding:15px; cursor:pointer; width:100%; text-align:left;">✨ Nueva Pieza</button>
+    <h2 style="color:var(--gold)">GEDALIA</h2>
+    <p onclick="showSection('inventory')" style="cursor:pointer">💎 Inventario & Stats</p>
+    <p onclick="showSection('new')" style="cursor:pointer">✨ Nueva Publicación</p>
 </div>
 
 <div class="main">
-    <div id="stats" class="section active"><h3>Estadísticas de Vistas</h3><div class="card" id="top-views"></div></div>
-    
-    <div id="inventory" class="section">
+    <div id="inventory" class="section active">
         <div class="card">
-            <h3>Catálogo Actual</h3>
-            <table>
-                <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Acciones</th></tr></thead>
+            <h3>Rendimiento del Catálogo</h3>
+            <table id="tabla-admin">
+                <thead>
+                    <tr>
+                        <th>Pieza</th>
+                        <th>Vistas</th>
+                        <th>Interacciones</th>
+                        <th>Ventas</th>
+                        <th>Stock</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
                 <tbody id="lista-prods"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="new" class="section">
+    <div id="form-section" class="section">
         <div class="card">
-            <h3>Publicar Nueva Joya</h3>
-            <input type="text" id="n" placeholder="Nombre de la pieza">
+            <h3 id="form-title">Nueva Publicación</h3>
+            <input type="hidden" id="edit-id">
+            <input type="text" id="n" placeholder="Nombre de la Joya">
             <select id="c">
                 <option value="Anillos">Anillos</option>
                 <option value="Dije">Dije</option>
@@ -53,81 +65,114 @@
                 <option value="Pulseras">Pulseras</option>
             </select>
             <input type="number" id="p" placeholder="Precio Base USD">
-            <p style="font-size:12px; color:#888; margin-top:10px;">Subir imágenes (Máximo 3):</p>
-            <input type="file" id="file1" accept="image/*">
-            <input type="file" id="file2" accept="image/*">
-            <input type="file" id="file3" accept="image/*">
-            <button class="btn-add" id="btn-publicar" onclick="subirTodo()">PUBLICAR EN TIENDA</button>
+            <input type="number" id="desc" placeholder="% Descuento">
+            <select id="envio">
+                <option value="false">Envío Pagado</option>
+                <option value="true">Envío Gratis</option>
+            </select>
+            <input type="file" id="f1">
+            <button style="background:var(--black); color:white; width:100%" onclick="guardar()">GUARDAR CAMBIOS</button>
+            <button style="background:#ccc; width:100%; margin-top:10px;" onclick="showSection('inventory')">CANCELAR</button>
         </div>
     </div>
 </div>
 
 <script>
-    function showSec(id) {
+    function showSection(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(id === 'inventory') cargarInventario();
-    }
-
-    async function subirTodo() {
-        const btn = document.getElementById('btn-publicar');
-        btn.disabled = true;
-        btn.innerText = "Subiendo imágenes...";
-
-        try {
-            const urls = [];
-            const files = [document.getElementById('file1').files[0], document.getElementById('file2').files[0], document.getElementById('file3').files[0]];
-            
-            for(let file of files) {
-                if(file) {
-                    const fd = new FormData();
-                    fd.append('image', file);
-                    const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    urls.push(data.url);
-                }
-            }
-
-            const prod = {
-                nombre: document.getElementById('n').value,
-                categoria: document.getElementById('c').value,
-                precioBase: document.getElementById('p').value,
-                imagenes: urls
-            };
-
-            await fetch('/api/admin/productos', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(prod)
-            });
-
-            alert("Pieza publicada con éxito.");
-            location.reload();
-        } catch (e) {
-            alert("Error al subir.");
-            btn.disabled = false;
+        if(id === 'new') {
+            resetForm();
+            document.getElementById('form-section').classList.add('active');
+        } else {
+            document.getElementById(id).classList.add('active');
+            if(id === 'inventory') cargarData();
         }
     }
 
-    async function cargarInventario() {
-        const res = await fetch('/api/admin/productos-todos');
-        const prods = await res.json();
-        document.getElementById('lista-prods').innerHTML = prods.map(p => `
+    async function cargarData() {
+        const res = await fetch('/api/admin/productos-detallado');
+        const data = await res.json();
+        document.getElementById('lista-prods').innerHTML = data.map(p => `
             <tr>
-                <td><img src="${p.imagenes[0]}" width="50"></td>
-                <td>${p.nombre}</td>
-                <td>$${p.precioBase}</td>
-                <td><button onclick="eliminar('${p._id}')" style="color:red; cursor:pointer;">Borrar</button></td>
+                <td><b>${p.nombre}</b><br><small>${p.categoria}</small></td>
+                <td><span class="badge badge-view">${p.vistas} 👀</span></td>
+                <td><span class="badge badge-click">${p.interacciones} ⚡</span></td>
+                <td>${p.ventas || 0}</td>
+                <td>${p.stock ? '✅' : '❌'}</td>
+                <td>
+                    <button class="btn-edit" onclick="editar('${p._id}')">Editar</button>
+                    <button class="btn-del" onclick="eliminar('${p._id}')">Eliminar</button>
+                </td>
             </tr>
         `).join('');
     }
 
+    async function editar(id) {
+        const res = await fetch('/api/admin/productos-todos');
+        const prods = await res.json();
+        const p = prods.find(x => x._id === id);
+        
+        document.getElementById('edit-id').value = p._id;
+        document.getElementById('n').value = p.nombre;
+        document.getElementById('c').value = p.categoria;
+        document.getElementById('p').value = p.precioBase;
+        document.getElementById('desc').value = p.descuento;
+        document.getElementById('envio').value = p.envioGratis.toString();
+        
+        document.getElementById('form-title').innerText = "Editar Pieza";
+        document.getElementById('form-section').classList.add('active');
+        document.getElementById('inventory').classList.remove('active');
+    }
+
+    async function guardar() {
+        const id = document.getElementById('edit-id').value;
+        const file = document.getElementById('f1').files[0];
+        let imagenes = [];
+
+        if(file) {
+            const fd = new FormData();
+            fd.append('image', file);
+            const resImg = await fetch('/api/admin/upload-image', { method: 'POST', body: fd });
+            const dataImg = await resImg.json();
+            imagenes.push(dataImg.url);
+        }
+
+        const payload = {
+            nombre: document.getElementById('n').value,
+            categoria: document.getElementById('c').value,
+            precioBase: document.getElementById('p').value,
+            descuento: document.getElementById('desc').value || 0,
+            envioGratis: document.getElementById('envio').value === "true"
+        };
+        if(imagenes.length > 0) payload.imagenes = imagenes;
+
+        const method = id ? 'PATCH' : 'POST';
+        const url = id ? `/api/admin/productos/${id}` : '/api/admin/productos';
+
+        await fetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+
+        alert("Operación exitosa");
+        showSection('inventory');
+    }
+
+    function resetForm() {
+        document.getElementById('edit-id').value = "";
+        document.getElementById('form-title').innerText = "Nueva Publicación";
+        document.querySelectorAll('input').forEach(i => i.value = "");
+    }
+
     async function eliminar(id) {
-        if(confirm("¿Eliminar?")) {
+        if(confirm("¿Seguro?")) {
             await fetch(`/api/admin/productos/${id}`, { method: 'DELETE' });
-            cargarInventario();
+            cargarData();
         }
     }
+
+    cargarData();
 </script>
 </body>
 </html>
