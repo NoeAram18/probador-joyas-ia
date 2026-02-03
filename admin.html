@@ -2,25 +2,23 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gedalia Admin | ERP</title>
+    <title>Gedalia Master | Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root { --gold: #c5a059; --black: #0a0a0a; --bg: #f4f7f6; }
         body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); display: flex; }
-        .sidebar { width: 260px; background: var(--black); height: 100vh; color: white; padding: 30px; position: fixed; }
-        .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
-        .badge { padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 5px; }
-        .badge-v { background: #e3f2fd; color: #1976d2; }
-        .badge-i { background: #fff3e0; color: #ef6c00; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { cursor: pointer; border: none; border-radius: 6px; padding: 10px 15px; font-weight: 600; transition: 0.2s; }
-        .btn-stock { background: #f0f0f0; font-size: 11px; }
-        .btn-stock.on { background: #e8f5e9; color: #2e7d32; }
-        .btn-edit { background: var(--gold); color: white; }
-        .btn-del { background: #ffebee; color: #c62828; }
+        .sidebar { width: 280px; background: var(--black); height: 100vh; color: white; padding: 40px 20px; position: fixed; }
+        .main { margin-left: 280px; padding: 50px; width: 100%; box-sizing: border-box; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        .badge { padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        button { cursor: pointer; border: none; border-radius: 8px; padding: 12px 20px; font-weight: 600; }
+        .btn-main { background: var(--black); color: white; width: 100%; margin-top: 20px; }
+        .btn-edit { background: var(--gold); color: white; margin-right: 5px; }
+        .btn-stock { background: #eee; font-size: 11px; }
+        .btn-stock.active { background: #e8f5e9; color: #2e7d32; }
         .section { display: none; }
         .active { display: block; }
     </style>
@@ -28,22 +26,22 @@
 <body>
 
 <div class="sidebar">
-    <h2 style="color:var(--gold); letter-spacing:2px;">GEDALIA</h2>
-    <div style="margin-top:40px;">
-        <p onclick="showSection('inventory')" style="cursor:pointer; padding:10px 0;">💎 Catálogo & Stats</p>
-        <p onclick="prepareNew()" style="cursor:pointer; padding:10px 0;">✨ Nueva Joya</p>
+    <h2 style="color:var(--gold); letter-spacing:3px;">GEDALIA</h2>
+    <div style="margin-top:50px;">
+        <p onclick="showSection('inventory')" style="cursor:pointer; padding:12px 0;">💎 Inventario & Stats</p>
+        <p onclick="prepareNew()" style="cursor:pointer; padding:12px 0;">✨ Nueva Publicación</p>
     </div>
 </div>
 
 <div class="main">
     <div id="inventory" class="section active">
         <div class="card">
-            <h3>Gestión de Inventario</h3>
+            <h3>Métricas de Catálogo</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Pieza</th>
-                        <th>Métricas</th>
+                        <th>Producto</th>
+                        <th>Rendimiento</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -55,7 +53,7 @@
 
     <div id="form-section" class="section">
         <div class="card">
-            <h3 id="form-title">Nueva Publicación</h3>
+            <h3 id="form-title">Nueva Joya</h3>
             <input type="hidden" id="edit-id">
             <input type="text" id="n" placeholder="Nombre de la pieza">
             <select id="c">
@@ -73,11 +71,11 @@
                 <option value="false">Envío Pagado</option>
                 <option value="true">Envío Gratis</option>
             </select>
-            <p style="font-size:12px; color:var(--gold);">Fotos (Subir solo las que desea cambiar/agregar):</p>
-            <input type="file" id="f1">
-            <input type="file" id="f2">
-            <input type="file" id="f3">
-            <button id="btn-save" style="background:var(--black); color:white; width:100%; margin-top:20px; padding:15px;" onclick="guardar()">GUARDAR CAMBIOS EN GEDALIA</button>
+            <p style="font-size:12px; color:var(--gold); margin-top:20px;">Fotos (Suba 3 fotos. En edición, solo suba si desea cambiarlas):</p>
+            <input type="file" id="f1" accept="image/*">
+            <input type="file" id="f2" accept="image/*">
+            <input type="file" id="f3" accept="image/*">
+            <button id="btn-save" class="btn-main" onclick="guardar()">PUBLICAR / ACTUALIZAR</button>
             <button style="background:#eee; width:100%; margin-top:10px;" onclick="showSection('inventory')">CANCELAR</button>
         </div>
     </div>
@@ -93,17 +91,17 @@
             <tr>
                 <td><b>${p.nombre}</b><br><small>${p.categoria}</small></td>
                 <td>
-                    <span class="badge badge-v">${p.vistas} 👀</span>
-                    <span class="badge badge-i">${p.interacciones} ⚡</span>
+                    <span class="badge" style="background:#e3f2fd; color:#1565c0;">${p.vistas} 👀</span>
+                    <span class="badge" style="background:#fff3e0; color:#e65100;">${p.interacciones} ⚡</span>
                 </td>
                 <td>
-                    <button class="btn-stock ${p.stock?'on':''}" onclick="toggleStock('${p._id}', ${p.stock})">
-                        ${p.stock ? 'DISPONIBLE' : 'AGOTADO'}
+                    <button class="btn-stock ${p.stock?'active':''}" onclick="toggleStock('${p._id}', ${p.stock})">
+                        ${p.stock ? 'EN VENTA' : 'AGOTADO'}
                     </button>
                 </td>
                 <td>
                     <button class="btn-edit" onclick="editar('${p._id}')">Editar</button>
-                    <button class="btn-del" onclick="eliminar('${p._id}')">🗑️</button>
+                    <button onclick="eliminar('${p._id}')" style="background:#ffebee; color:#c62828;">🗑️</button>
                 </td>
             </tr>
         `).join('');
@@ -142,24 +140,43 @@
         cargarData();
     }
 
+    // COMPRESIÓN EN EL CLIENTE PARA ESCALABILIDAD
+    async function procesarImagen(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX = 1200;
+                    let w = img.width, h = img.height;
+                    if (w > MAX) { h *= MAX / w; w = MAX; }
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    canvas.toBlob(async (blob) => {
+                        const fd = new FormData();
+                        fd.append('image', blob);
+                        const r = await fetch('/api/admin/upload-image', { method: 'POST', body: fd });
+                        const d = await r.json();
+                        resolve(d.url);
+                    }, 'image/jpeg', 0.8);
+                };
+            };
+        });
+    }
+
     async function guardar() {
         const btn = document.getElementById('btn-save');
-        btn.disabled = true;
-        btn.innerText = "PROCESANDO...";
-
+        btn.disabled = true; btn.innerText = "PROCESANDO IMÁGENES...";
+        
         const id = document.getElementById('edit-id').value;
-        const fotos = [document.getElementById('f1').files[0], document.getElementById('f2').files[0], document.getElementById('f3').files[0]];
-        let nuevasUrls = [];
+        const files = [document.getElementById('f1').files[0], document.getElementById('f2').files[0], document.getElementById('f3').files[0]];
+        let urls = [];
 
-        for(let f of fotos) {
-            if(f) {
-                const fd = new FormData();
-                fd.append('image', f);
-                const r = await fetch('/api/admin/upload-image', { method: 'POST', body: fd });
-                const d = await r.json();
-                nuevasUrls.push(d.url);
-            }
-        }
+        for(let f of files) { if(f) urls.push(await procesarImagen(f)); }
 
         const payload = {
             nombre: document.getElementById('n').value,
@@ -168,7 +185,7 @@
             descuento: Number(document.getElementById('desc').value) || 0,
             envioGratis: document.getElementById('envio').value === "true"
         };
-        if(nuevasUrls.length > 0) payload.imagenes = nuevasUrls;
+        if(urls.length > 0) payload.imagenes = urls;
 
         await fetch(id ? `/api/admin/productos/${id}` : '/api/admin/productos', {
             method: id ? 'PATCH' : 'POST',
@@ -176,15 +193,14 @@
             body: JSON.stringify(payload)
         });
 
-        alert("Operación completada");
-        btn.disabled = false;
-        btn.innerText = "GUARDAR CAMBIOS EN GEDALIA";
+        alert("Operación Exitosa");
+        btn.disabled = false; btn.innerText = "PUBLICAR / ACTUALIZAR";
         cargarData();
         showSection('inventory');
     }
 
     async function eliminar(id) {
-        if(confirm("¿Eliminar permanentemente?")) {
+        if(confirm("¿Eliminar para siempre?")) {
             await fetch(`/api/admin/productos/${id}`, { method: 'DELETE' });
             cargarData();
         }
