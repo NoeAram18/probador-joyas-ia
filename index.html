@@ -11,34 +11,34 @@
         header { padding: 40px; text-align: center; background: var(--black); color: white; border-bottom: 4px solid var(--gold); }
         header h1 { font-family: 'Playfair Display'; letter-spacing: 12px; margin: 0; }
         
-        .nav-filters { display: flex; justify-content: center; gap: 20px; padding: 20px; background: white; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #eee; }
-        .nav-item { background: none; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; color: #888; font-size: 11px; }
+        .nav-filters { display: flex; justify-content: center; gap: 20px; padding: 20px; background: white; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #eee; overflow-x: auto; }
+        .nav-item { background: none; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; color: #888; font-size: 11px; white-space: nowrap; }
         .nav-item.active { color: var(--gold); border-bottom: 1px solid var(--gold); }
 
         .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 40px; }
         .card { cursor: pointer; text-align: center; position: relative; }
-        .card img { width: 100%; height: 380px; object-fit: cover; transition: 0.5s; background: #eee; }
-        .promo-badge { position: absolute; top: 10px; left: 10px; background: var(--gold); color: white; padding: 5px 10px; font-size: 10px; font-weight: bold; }
+        .card img { width: 100%; height: 400px; object-fit: cover; transition: 0.6s; background: #f0f0f0; }
+        .card:hover img { transform: scale(1.02); }
+        .promo-badge { position: absolute; top: 15px; left: 15px; background: var(--gold); color: white; padding: 6px 12px; font-size: 10px; font-weight: bold; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: none; z-index: 1000; overflow-y: auto; }
         .modal-grid { display: grid; grid-template-columns: 1.2fr 1fr; min-height: 100vh; }
-        .slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; background: var(--gray); -webkit-overflow-scrolling: touch; }
+        .slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; background: var(--gray); }
         .slider::-webkit-scrollbar { display: none; }
         .slider img { min-width: 100%; height: 100vh; object-fit: contain; scroll-snap-align: center; }
         
         .modal-info { padding: 60px; display: flex; flex-direction: column; justify-content: center; }
-        .btn-back { background: none; border: 1px solid #ccc; padding: 12px 24px; cursor: pointer; margin-bottom: 30px; align-self: flex-start; letter-spacing: 1px; }
+        .btn-back { background: none; border: 1px solid #ccc; padding: 12px 25px; cursor: pointer; margin-bottom: 30px; align-self: flex-start; transition: 0.3s; }
         .btn-back:hover { background: var(--black); color: white; }
-        .btn-buy { background: var(--gold); color: white; border: none; padding: 20px; font-weight: bold; letter-spacing: 2px; cursor: pointer; }
+        .btn-buy { background: var(--gold); color: white; border: none; padding: 22px; font-weight: bold; letter-spacing: 3px; cursor: pointer; }
 
-        @media (max-width: 800px) { .modal-grid { grid-template-columns: 1fr; } .slider img { height: 60vh; } .modal-info { padding: 30px; } }
+        @media (max-width: 900px) { .modal-grid { grid-template-columns: 1fr; } .slider img { height: 65vh; } .modal-info { padding: 40px; } }
     </style>
 </head>
 <body>
 
 <header><h1>GEDALIA</h1></header>
-
 <nav class="nav-filters" id="filtros"></nav>
 
 <div class="container"><div class="grid" id="catalogo"></div></div>
@@ -49,17 +49,13 @@
 
 <script>
     let productos = [];
-    const categorias = ['Todos', 'Anillos', 'Dije', 'Collares', 'Aretes', 'Pulseras'];
+    const cats = ['Todos', 'Anillos', 'Dije', 'Collares', 'Aretes', 'Pulseras'];
 
     async function cargar() {
         const res = await fetch('/api/productos');
         productos = await res.json();
         render(productos);
-        renderFiltros();
-    }
-
-    function renderFiltros() {
-        document.getElementById('filtros').innerHTML = categorias.map(c => `
+        document.getElementById('filtros').innerHTML = cats.map(c => `
             <button class="nav-item ${c==='Todos'?'active':''}" onclick="filtrar('${c}', this)">${c}</button>
         `).join('');
     }
@@ -80,31 +76,26 @@
         fetch(`/api/productos/view/${id}`, { method: 'POST' });
 
         document.getElementById('modal-content').innerHTML = `
-            <div class="slider">
-                ${p.imagenes.map(img => `<img src="${img}">`).join('')}
-            </div>
+            <div class="slider">${p.imagenes.map(img => `<img src="${img}">`).join('')}</div>
             <div class="modal-info">
                 <button class="btn-back" onclick="cerrarModal()">← REGRESAR AL MENÚ</button>
                 <p style="color:var(--gold); letter-spacing:2px; font-size:12px;">${p.categoria.toUpperCase()}</p>
-                <h2 style="font-family:'Playfair Display'; font-size:2.5rem; margin:10px 0;">${p.nombre}</h2>
-                <p style="font-size:1.5rem; color:var(--black); margin-bottom:20px;">$${p.precioBase} USD</p>
-                ${p.envioGratis ? `<p style="color:var(--gold); font-size:12px; margin-bottom:20px;">✦ ENVÍO EXPRÉS GRATUITO</p>` : ''}
-                <button class="btn-buy" onclick="interactuar('${p._id}')">CONSULTAR DISPONIBILIDAD</button>
-                <p style="margin-top:20px; font-size:11px; color:#888; text-align:center;">⟵ Desliza la imagen para ver más detalles ⟶</p>
+                <h2 style="font-family:'Playfair Display'; font-size:2.8rem; margin:15px 0;">${p.nombre}</h2>
+                <p style="font-size:1.6rem; margin-bottom:10px;">$${p.precioBase} USD</p>
+                ${p.envioGratis ? `<p style="color:var(--gold); font-size:12px; margin-bottom:25px;">✦ ENVÍO GRATIS INCLUIDO</p>` : ''}
+                <button class="btn-buy" onclick="interactuar('${p._id}')">CONSULTAR PIEZA</button>
+                <small style="color:#888; margin-top:20px; text-align:center;">⟵ Desliza para ver más fotos ⟶</small>
             </div>
         `;
         document.getElementById('modal').style.display = 'block';
         document.body.style.overflow = 'hidden';
     }
 
-    function cerrarModal() {
-        document.getElementById('modal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-
+    function cerrarModal() { document.getElementById('modal').style.display = 'none'; document.body.style.overflow = 'auto'; }
+    
     function interactuar(id) {
         fetch(`/api/productos/interact/${id}`, { method: 'POST' });
-        alert("¡Gracias! Un asesor de GEDALIA se pondrá en contacto.");
+        alert("Solicitud recibida. Un asesor le contactará.");
     }
 
     function filtrar(cat, btn) {
