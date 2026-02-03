@@ -3,49 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GEDALIA | Alta Joyería</title>
+    <title>GEDALIA | Alta Joyería en Plata</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;600&display=swap" rel="stylesheet">
     <style>
         :root { --gold: #c5a059; --black: #0a0a0a; --white: #ffffff; }
-        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--white); overflow-x: hidden; }
-        header { padding: 40px; text-align: center; background: var(--black); color: white; border-bottom: 4px solid var(--gold); }
-        header h1 { font-family: 'Playfair Display'; letter-spacing: 12px; margin: 0; font-size: 2.5rem; }
+        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--white); }
+        header { padding: 50px 20px; text-align: center; background: var(--black); color: white; border-bottom: 4px solid var(--gold); }
+        header h1 { font-family: 'Playfair Display'; letter-spacing: 12px; margin: 0; font-size: 3rem; }
+        header p { text-transform: uppercase; letter-spacing: 5px; font-size: 10px; margin-top: 10px; color: var(--gold); }
         
+        .search-container { max-width: 600px; margin: 20px auto; padding: 0 20px; }
+        #buscador { width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 30px; text-align: center; font-family: 'Inter'; outline: none; transition: 0.3s; }
+        #buscador:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(197, 160, 89, 0.2); }
+
         .nav-filters { display: flex; justify-content: center; gap: 20px; padding: 20px; background: white; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #eee; overflow-x: auto; scrollbar-width: none; }
-        .nav-item { background: none; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; color: #888; font-size: 11px; white-space: nowrap; transition: 0.3s; }
+        .nav-item { background: none; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; color: #888; font-size: 11px; white-space: nowrap; }
         .nav-item.active { color: var(--gold); border-bottom: 2px solid var(--gold); }
 
         .container { max-width: 1400px; margin: 40px auto; padding: 0 20px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 40px; }
-        
-        .card { cursor: pointer; text-align: center; position: relative; opacity: 0; transform: translateY(20px); transition: 0.6s all ease-out; }
+        .card { cursor: pointer; text-align: center; opacity: 0; transform: translateY(20px); transition: 0.6s all; }
         .card.visible { opacity: 1; transform: translateY(0); }
         .img-box { width: 100%; height: 420px; background: #f9f9f9; overflow: hidden; margin-bottom: 15px; }
         .card img { width: 100%; height: 100%; object-fit: cover; transition: 0.8s; opacity: 0; }
         .card img.loaded { opacity: 1; }
-        .card:hover img { transform: scale(1.05); }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: none; z-index: 2000; overflow-y: auto; }
         .modal-grid { display: grid; grid-template-columns: 1.2fr 1fr; min-height: 100vh; }
-        .slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; background: #f4f4f4; -webkit-overflow-scrolling: touch; }
+        .slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; background: #f4f4f4; }
         .slider img { min-width: 100%; height: 100vh; object-fit: contain; scroll-snap-align: center; }
-        
-        .modal-info { padding: 80px; display: flex; flex-direction: column; justify-content: center; position: relative; }
-        .btn-back { position: absolute; top: 40px; left: 80px; background: none; border: 1px solid #ddd; padding: 10px 20px; cursor: pointer; font-size: 12px; letter-spacing: 1px; }
-        .btn-back:hover { background: var(--black); color: white; }
-        .btn-buy { background: var(--gold); color: white; border: none; padding: 25px; font-weight: bold; letter-spacing: 3px; cursor: pointer; margin-top: 30px; font-size: 14px; }
+        .modal-info { padding: 60px; display: flex; flex-direction: column; justify-content: center; }
+        .btn-back { background: none; border: 1px solid #ddd; padding: 12px 25px; cursor: pointer; margin-bottom: 30px; align-self: flex-start; }
+        .btn-buy { background: var(--gold); color: white; border: none; padding: 25px; font-weight: bold; letter-spacing: 3px; cursor: pointer; }
 
-        @media (max-width: 950px) { 
-            .modal-grid { grid-template-columns: 1fr; } 
-            .slider img { height: 60vh; } 
-            .modal-info { padding: 40px; } 
-            .btn-back { position: relative; top: 0; left: 0; margin-bottom: 30px; }
-        }
+        @media (max-width: 950px) { .modal-grid { grid-template-columns: 1fr; } .slider img { height: 60vh; } .modal-info { padding: 40px; } }
     </style>
 </head>
 <body>
 
-<header><h1>GEDALIA</h1></header>
+<header>
+    <h1>GEDALIA</h1>
+    <p>Alta joyería en plata</p>
+</header>
+
+<div class="search-container">
+    <input type="text" id="buscador" placeholder="Buscar por nombre o pieza..." oninput="buscar()">
+</div>
+
 <nav class="nav-filters" id="filtros"></nav>
 
 <div class="container"><div class="grid" id="catalogo"></div></div>
@@ -56,73 +60,63 @@
 
 <script>
     let productos = [];
-    const cats = ['Todos', 'Anillos', 'Dije', 'Collares', 'Aretes', 'Pulseras'];
+    let filtrados = [];
 
     async function cargar() {
         const res = await fetch('/api/productos');
         productos = await res.json();
-        render(productos);
-        document.getElementById('filtros').innerHTML = cats.map(c => `
+        filtrados = productos;
+        render(filtrados);
+        document.getElementById('filtros').innerHTML = ['Todos', 'Anillos', 'Dije', 'Collares', 'Aretes', 'Pulseras'].map(c => `
             <button class="nav-item ${c==='Todos'?'active':''}" onclick="filtrar('${c}', this)">${c}</button>
         `).join('');
     }
 
     function render(lista) {
-        const catalogo = document.getElementById('catalogo');
-        catalogo.innerHTML = lista.map((p, index) => `
-            <div class="card" onclick="abrirModal('${p._id}')" id="p-${p._id}">
-                ${p.descuento > 0 ? `<div style="position:absolute; top:15px; left:15px; background:var(--gold); color:white; padding:5px 10px; font-size:10px; font-weight:bold; z-index:1;">SALE ${p.descuento}%</div>` : ''}
-                <div class="img-box">
-                    <img src="${p.imagenes[0]}" loading="lazy" onload="this.classList.add('loaded')">
-                </div>
+        document.getElementById('catalogo').innerHTML = lista.map(p => `
+            <div class="card" onclick="abrirModal('${p._id}')">
+                <div class="img-box"><img src="${p.imagenes[0]}" loading="lazy" onload="this.classList.add('loaded')"></div>
                 <h3>${p.nombre}</h3>
-                <p style="color:var(--gold); font-weight:600;">$${p.precioBase} USD</p>
+                <p style="color:var(--gold)">$${p.precioBase} USD</p>
             </div>
         `).join('');
+        setTimeout(() => document.querySelectorAll('.card').forEach(c => c.classList.add('visible')), 100);
+    }
 
-        // Animación de entrada escalonada
-        setTimeout(() => {
-            document.querySelectorAll('.card').forEach((c, i) => {
-                setTimeout(() => c.classList.add('visible'), i * 50);
-            });
-        }, 100);
+    function buscar() {
+        const query = document.getElementById('buscador').value.toLowerCase();
+        filtrados = productos.filter(p => p.nombre.toLowerCase().includes(query) || p.categoria.toLowerCase().includes(query));
+        render(filtrados);
     }
 
     function abrirModal(id) {
         const p = productos.find(x => x._id === id);
         fetch(`/api/productos/view/${id}`, { method: 'POST' });
-
         document.getElementById('modal-content').innerHTML = `
             <div class="slider">${p.imagenes.map(img => `<img src="${img}">`).join('')}</div>
             <div class="modal-info">
-                <button class="btn-back" onclick="cerrarModal()">✕ CERRAR Y VOLVER AL MENÚ</button>
-                <p style="color:var(--gold); letter-spacing:2px; font-size:12px; margin-bottom:10px;">${p.categoria.toUpperCase()}</p>
-                <h2 style="font-family:'Playfair Display'; font-size:3rem; margin:0;">${p.nombre}</h2>
-                <div style="height:2px; width:50px; background:var(--gold); margin:20px 0;"></div>
-                <p style="font-size:1.8rem; margin:0;">$${p.precioBase} USD</p>
-                ${p.envioGratis ? `<p style="color:var(--gold); font-size:12px; margin-top:10px;">✦ ENVÍO EXPRÉS GRATUITO</p>` : ''}
+                <button class="btn-back" onclick="cerrarModal()">✕ VOLVER AL MENÚ</button>
+                <h2 style="font-family:'Playfair Display'; font-size:2.8rem; margin:0;">${p.nombre}</h2>
+                <p style="font-size:1.8rem; margin:20px 0;">$${p.precioBase} USD</p>
                 <button class="btn-buy" onclick="interactuar('${p._id}')">INICIAR CONSULTA</button>
-                <p style="margin-top:30px; font-size:11px; color:#888; text-align:center; border-top:1px solid #eee; padding-top:20px;">Desliza horizontalmente para ver más vistas de la pieza</p>
             </div>
         `;
         document.getElementById('modal').style.display = 'block';
         document.body.style.overflow = 'hidden';
     }
 
-    function cerrarModal() {
-        document.getElementById('modal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
+    function cerrarModal() { document.getElementById('modal').style.display = 'none'; document.body.style.overflow = 'auto'; }
 
     function filtrar(cat, btn) {
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         btn.classList.add('active');
-        render(cat === 'Todos' ? productos : productos.filter(p => p.categoria === cat));
+        filtrados = cat === 'Todos' ? productos : productos.filter(p => p.categoria === cat);
+        render(filtrados);
     }
 
     function interactuar(id) {
         fetch(`/api/productos/interact/${id}`, { method: 'POST' });
-        alert("¡Solicitud recibida! Nos contactaremos con usted a la brevedad.");
+        alert("¡Solicitud recibida!");
     }
 
     cargar();
